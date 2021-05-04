@@ -7,6 +7,7 @@ dotenv.config({ path: `${__dirname}/../.env` })
 import { bot } from '@/helpers/bot'
 import { checkTime } from '@/middlewares/checkTime'
 import { setupHelp } from '@/commands/help'
+import { setupBeautify } from '@/commands/beautify'
 import { setupI18N } from '@/helpers/i18n'
 import { setupLanguage } from '@/commands/language'
 import { attachUser } from '@/middlewares/attachUser'
@@ -20,6 +21,7 @@ setupI18N(bot)
 // Setup commands
 setupHelp(bot)
 setupLanguage(bot)
+setupBeautify(bot)
 
 // Start bot
 bot.launch().then(() => {
