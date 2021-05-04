@@ -3,7 +3,7 @@ const ndl = require("needle")
 const puppeteer = require('puppeteer')
 const telegraph = require('telegraph-node')
 const cheerio = require('cheerio')
-const { Readability } = require('@mozilla/readability');
+const { Readability, isProbablyReaderable } = require('@mozilla/readability');
 var { JSDOM } = require('jsdom');
 const jsdom = require('jsdom');
 const util = require('util');
@@ -41,32 +41,35 @@ export function setupBeautify(bot: Telegraf<Context>) {
           const virtualConsole = new jsdom.VirtualConsole();
           let document = await ndl('get', link)
           var doc = new JSDOM(document.body, { virtualConsole });
-          let parsed = new Readability(doc.window.document).parse()
-          if (parsed == null) {
-            return
-          }
-          let content = parsed.content//if null try to process directly with cheerio
-          let title = parsed.title
-
-          const $ = cheerio.load(content);
-          $.html()
-          let transformed = transform($('body')[0])
-          let chil = transformed.children.filter(elem => (typeof elem != 'string') || (typeof elem == 'string' && elem.replace(/\s/g, '').length > 0))
-
-          if ((new util.TextEncoder().encode('' + chil)).length > 1520) {
-            while ((new util.TextEncoder().encode('' + chil)).length > 1520) {
-              chil = chil.slice(0, chil.length - 2)
+          //check if should parse
+          if (isProbablyReaderable(doc.window.document)) {
+            let parsed = new Readability(doc.window.document).parse()
+            if (parsed == null) {
+              return
             }
-            //split into two articles
-          }
-          else {
-            const ph = new telegraph()
-            const random_token = process.env.TELEGRAPH_TOKEN
-            let pg = await ph.createPage(random_token, title, chil, {
-              return_content: true
-            })
-            ctx.reply(pg.url, { reply_to_message_id: ctx.message.message_id })
-            console.log(pg.url)
+            let content = parsed.content//if null try to process directly with cheerio
+            let title = parsed.title
+
+            const $ = cheerio.load(content);
+            $.html()
+            let transformed = transform($('body')[0])
+            let chil = transformed.children.filter(elem => (typeof elem != 'string') || (typeof elem == 'string' && elem.replace(/\s/g, '').length > 0))
+
+            if ((new util.TextEncoder().encode('' + chil)).length > 1520) {
+              while ((new util.TextEncoder().encode('' + chil)).length > 1520) {
+                chil = chil.slice(0, chil.length - 2)
+              }
+              //split into two articles
+            }
+            else {
+              const ph = new telegraph()
+              const random_token = process.env.TELEGRAPH_TOKEN
+              let pg = await ph.createPage(random_token, title, chil, {
+                return_content: true
+              })
+              ctx.reply(pg.url, { reply_to_message_id: ctx.message.message_id })
+              console.log(pg.url)
+            }
           }
         }
       }
