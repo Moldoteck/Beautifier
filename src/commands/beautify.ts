@@ -36,42 +36,43 @@ export function setupBeautify(bot: Telegraf<Context>) {
       }
 
       if (detected_urls.length > 0) {
-        let link = detected_urls[0]
-        if (!link.includes('telegra.ph')) {
-          const virtualConsole = new jsdom.VirtualConsole();
-          let document = await ndl('get', link)
-          var doc = new JSDOM(document.body, { virtualConsole });
-          //check if should parse
-          if (isProbablyReaderable(doc.window.document)) {
-            let parsed = new Readability(doc.window.document).parse()
-            if (parsed == null) {
-              return
-            }
-            let content = parsed.content//if null try to process directly with cheerio
-            let title = parsed.title
-
-            const $ = cheerio.load(content);
-            $.html()
-            let transformed = transform($('body')[0])
-            let chil = transformed.children.filter(elem => (typeof elem != 'string') || (typeof elem == 'string' && elem.replace(/\s/g, '').length > 0))
-
-            if ((new util.TextEncoder().encode('' + chil)).length > 1520) {
-              while ((new util.TextEncoder().encode('' + chil)).length > 1520) {
-                chil = chil.slice(0, chil.length - 2)
+        detected_urls.forEach(async link => {
+          if (!link.includes('telegra.ph')) {
+            const virtualConsole = new jsdom.VirtualConsole();
+            let document = await ndl('get', link)
+            var doc = new JSDOM(document.body, { virtualConsole });
+            //check if should parse
+            if (isProbablyReaderable(doc.window.document)) {
+              let parsed = new Readability(doc.window.document).parse()
+              if (parsed == null) {
+                return
               }
-              //split into two articles
-            }
-            else {
-              const ph = new telegraph()
-              const random_token = process.env.TELEGRAPH_TOKEN
-              let pg = await ph.createPage(random_token, title, chil, {
-                return_content: true
-              })
-              ctx.reply(pg.url, { reply_to_message_id: ctx.message.message_id })
-              console.log(pg.url)
+              let content = parsed.content//if null try to process directly with cheerio
+              let title = parsed.title
+  
+              const $ = cheerio.load(content);
+              $.html()
+              let transformed = transform($('body')[0])
+              let chil = transformed.children.filter(elem => (typeof elem != 'string') || (typeof elem == 'string' && elem.replace(/\s/g, '').length > 0))
+  
+              if ((new util.TextEncoder().encode('' + chil)).length > 1520) {
+                while ((new util.TextEncoder().encode('' + chil)).length > 1520) {
+                  chil = chil.slice(0, chil.length - 2)
+                }
+                //split into two articles
+              }
+              else {
+                const ph = new telegraph()
+                const random_token = process.env.TELEGRAPH_TOKEN
+                let pg = await ph.createPage(random_token, title, chil, {
+                  return_content: true
+                })
+                ctx.reply(pg.url, { reply_to_message_id: ctx.message.message_id })
+                console.log(pg.url)
+              }
             }
           }
-        }
+        });
       }
     }
   })
