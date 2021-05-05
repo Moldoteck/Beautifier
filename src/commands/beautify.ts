@@ -52,7 +52,6 @@ export function setupBeautify(bot: Telegraf<Context>) {
               }
               let content = parsed.content//if null try to process directly with cheerio
               let title = parsed.title
-
               const $ = cheerio.load(content);
               $.html()
               //todo: if table, transform it to image, upload to telegraph and insert path to it
@@ -71,16 +70,18 @@ export function setupBeautify(bot: Telegraf<Context>) {
               // )
               // print('http://telegra.ph/{}'.format(response['path']))
               let transformed = transform($('body')[0])
+              // console.log(transformed)
               let chil = transformed.children.filter(elem => (typeof elem != 'string') || (typeof elem == 'string' && elem.replace(/\s/g, '').length > 0))
 
               if ((new util.TextEncoder().encode('' + chil)).length > 1520) {
                 while ((new util.TextEncoder().encode('' + chil)).length > 1520) {
                   chil = chil.slice(0, chil.length - 2)
                 }
+                chil.push({tag:'p', children:['TRIMMED DOCUMENT']})
                 //split into two articles
               }
-              else {
-                // console.log(JSON.stringify(chil, null, 2))
+              
+                console.log(JSON.stringify(chil, null, 2))
                 const ph = new telegraph()
                 const random_token = process.env.TELEGRAPH_TOKEN
                 let pg = await ph.createPage(random_token, title, chil, {
@@ -88,7 +89,6 @@ export function setupBeautify(bot: Telegraf<Context>) {
                 })
                 ctx.replyWithHTML(`<a href='${pg.url}'>Beautiful link</a>`, { reply_to_message_id: ctx.message.message_id })
                 console.log(pg.url)
-              }
             }
           }
         });
@@ -105,7 +105,8 @@ function transform(ob) {
   let root = undefined
 
   if (ob.type == 'text') {
-    return ob.data
+    let wout = ob.data.replace(/\s\s+/g, ' ');
+    return wout == ' ' ? "" : wout;
   }
 
   root = { tag: (ob).name, attrs: {}, children: [] }
@@ -116,7 +117,7 @@ function transform(ob) {
     root.tag = 'h4'
   }
 
-  if (!allowed_tags.includes(root.tag) && !['div', 'section', 'article', 'details', 'summary'].includes(root.tag)) {
+  if (!allowed_tags.includes(root.tag) && !['div', 'section', 'article', 'details', 'summary', 'main', 'header', 'span'].includes(root.tag)) {
     return ""
   }
 
@@ -163,8 +164,8 @@ function transform(ob) {
   if (childs != undefined) {
     let i = 0
     for (i = 0; i < childs.length; ++i) {
-      if (childs[i].type == 'text' && (childs[i].data.replace(/^\s+/, '').replace(/\s+$/, '').length == 0))
-        continue
+      // if (childs[i].type == 'text' && (childs[i].data.replace(/^\s+/, '').replace(/\s+$/, '').length == 0))
+      //   continue
       let chld = transform(childs[i])
       if (Array.isArray(chld)) {
         root.children = root.children.concat(chld)
@@ -178,7 +179,7 @@ function transform(ob) {
     delete root['children'];
   }
 
-  if (['div', 'section', 'article'].includes(root.tag)) {
+  if (['div', 'section', 'article', 'main', 'header', 'span'].includes(root.tag)) {
     return root.children
   }
   if (root.tag == 'details') {
