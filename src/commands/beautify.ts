@@ -42,7 +42,7 @@ export function setupBeautify(bot: Telegraf<Context>) {
             const virtualConsole = new jsdom.VirtualConsole();
             let document = await ndl('get', link, { follow_max: 5 })
 
-            var doc = new JSDOM(document.body)
+            var doc = new JSDOM(document.body, { virtualConsole })
             //check if should parse
             if (isProbablyReaderable(doc.window.document)) {
               let parsed = new Readability(doc.window.document).parse()
