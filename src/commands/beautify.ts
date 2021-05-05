@@ -49,12 +49,12 @@ export function setupBeautify(bot: Telegraf<Context>) {
               }
               let content = parsed.content//if null try to process directly with cheerio
               let title = parsed.title
-  
+
               const $ = cheerio.load(content);
               $.html()
               let transformed = transform($('body')[0])
               let chil = transformed.children.filter(elem => (typeof elem != 'string') || (typeof elem == 'string' && elem.replace(/\s/g, '').length > 0))
-  
+
               if ((new util.TextEncoder().encode('' + chil)).length > 1520) {
                 while ((new util.TextEncoder().encode('' + chil)).length > 1520) {
                   chil = chil.slice(0, chil.length - 2)
@@ -62,6 +62,7 @@ export function setupBeautify(bot: Telegraf<Context>) {
                 //split into two articles
               }
               else {
+                // console.log(JSON.stringify(chil, null, 2))
                 const ph = new telegraph()
                 const random_token = process.env.TELEGRAPH_TOKEN
                 let pg = await ph.createPage(random_token, title, chil, {
@@ -103,9 +104,29 @@ function transform(ob) {
       root.attrs['href'] = ob.attribs['href']
       at_detecetd = true
     }
+    let bad_width = false
     if ('src' in ob.attribs) {
-      root.attrs['src'] = ob.attribs['src']
-      at_detecetd = true
+      if ('width' in ob.attribs) {
+        if (ob.attribs['width'] <= 100 && ob.attribs['height'] <= 100) {
+          bad_width = true
+        }
+      }
+      if (!bad_width) {
+        if ('srcset' in ob.attribs) {
+          console.log(ob.attribs['srcset'].split(', '))
+          let srcset = ob.attribs['srcset'].split(', ')
+          srcset = srcset[srcset.length - 1]
+          srcset = srcset.split(' ')[0]
+          root.attrs['src'] = srcset
+          at_detecetd = true
+        } else if ('data-src' in ob.attribs) {
+          root.attrs['src'] = ob.attribs['data-src']
+          at_detecetd = true
+        } else {
+          root.attrs['src'] = ob.attribs['src']
+          at_detecetd = true
+        }
+      }
     }
   }
   if (!at_detecetd) {
