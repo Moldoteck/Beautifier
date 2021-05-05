@@ -129,7 +129,7 @@ function transform(ob) {
     let bad_width = false
     if ('src' in ob.attribs) {
       if ('width' in ob.attribs) {
-        if ((!isNaN(ob.attribs['width'])) && ob.attribs['height'] <= 100) {
+        if ((!isNaN(ob.attribs['width'])) && ob.attribs['width'] <= 100) {
           bad_width = true
         }
       }
