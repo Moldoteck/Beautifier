@@ -55,6 +55,21 @@ export function setupBeautify(bot: Telegraf<Context>) {
 
               const $ = cheerio.load(content);
               $.html()
+              //todo: if table, transform it to image, upload to telegraph and insert path to it
+              //               from telegraph import Telegraph
+              // telegraph = Telegraph()
+              // telegraph.create_account(short_name='1337')
+              // with open('/Users/deantipin/picture.png', 'rb') as f:
+              //     path = requests.post(
+              //                     'https://telegra.ph/upload', files={'file': 
+              //                                                         ('file', f, 
+              //                                                         'image/jpeg')}).json()[0]['src']
+              // response = telegraph.create_page(
+              //     'Hey',
+              //     html_content="<p>Hello, world!</p> \
+              //                   <img src='{}'/>".format(path),
+              // )
+              // print('http://telegra.ph/{}'.format(response['path']))
               let transformed = transform($('body')[0])
               let chil = transformed.children.filter(elem => (typeof elem != 'string') || (typeof elem == 'string' && elem.replace(/\s/g, '').length > 0))
 
@@ -71,7 +86,7 @@ export function setupBeautify(bot: Telegraf<Context>) {
                 let pg = await ph.createPage(random_token, title, chil, {
                   return_content: true
                 })
-                ctx.reply(pg.url, { reply_to_message_id: ctx.message.message_id })
+                ctx.replyWithHTML(`<a href='${pg.url}'>Beautiful link</a>`, { reply_to_message_id: ctx.message.message_id })
                 console.log(pg.url)
               }
             }
@@ -166,12 +181,12 @@ function transform(ob) {
   if (['div', 'section'].includes(root.tag)) {
     return root.children
   }
-  if (root.tag == 'details'){
+  if (root.tag == 'details') {
     root.tag = 'blockquote'
   }
-  if (root.tag == 'summary'){
+  if (root.tag == 'summary') {
     root.tag = 'b'
-    root.children.push({tag:'br'})
+    root.children.push({ tag: 'br' })
   }
 
   return root
