@@ -101,7 +101,7 @@ function transform(ob) {
     root.tag = 'h4'
   }
 
-  if (!allowed_tags.includes(root.tag) && !['div', 'section'].includes(root.tag)) {
+  if (!allowed_tags.includes(root.tag) && !['div', 'section', 'details', 'summary'].includes(root.tag)) {
     return ""
   }
 
@@ -165,6 +165,13 @@ function transform(ob) {
 
   if (['div', 'section'].includes(root.tag)) {
     return root.children
+  }
+  if (root.tag == 'details'){
+    root.tag = 'blockquote'
+  }
+  if (root.tag == 'summary'){
+    root.tag = 'b'
+    root.children.push({tag:'br'})
   }
 
   return root
