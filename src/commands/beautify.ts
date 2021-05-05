@@ -35,16 +35,19 @@ export function setupBeautify(bot: Telegraf<Context>) {
         }
       }
 
+      console.log(detected_urls)
       if (detected_urls.length > 0) {
         detected_urls.forEach(async link => {
           if (!link.includes('telegra.ph')) {
             const virtualConsole = new jsdom.VirtualConsole();
-            let document = await ndl('get', link)
-            var doc = new JSDOM(document.body, { virtualConsole });
+            let document = await ndl('get', link, { follow_max: 5 })
+
+            var doc = new JSDOM(document.body)
             //check if should parse
             if (isProbablyReaderable(doc.window.document)) {
               let parsed = new Readability(doc.window.document).parse()
               if (parsed == null) {
+                console.log('parsed is null')
                 return
               }
               let content = parsed.content//if null try to process directly with cheerio
@@ -83,19 +86,23 @@ export function setupBeautify(bot: Telegraf<Context>) {
 }
 
 function transform(ob) {
+  let allowed_tags = ['body', 'a', 'aside', 'b', 'blockquote', 'br', 'code', 'em', 'figcaption', 'figure', 'h3', 'h4', 'hr', 'i', 'iframe', 'img', 'li', 'ol', 'p', 'pre', 's', 'strong', 'u', 'ul', 'video']
   let root = undefined
 
   if (ob.type == 'text') {
     return ob.data
   }
 
-  if (ob.type == 'div') {
-    return
-  }
-
   root = { tag: (ob).name, attrs: {}, children: [] }
   if (['h1', 'h2'].includes(root.tag)) {
     root.tag = 'b'
+  }
+  if (['h5', 'h6'].includes(root.tag)) {
+    root.tag = 'h4'
+  }
+
+  if (!allowed_tags.includes(root.tag) && !['div', 'section'].includes(root.tag)) {
+    return ""
   }
 
   let at_detecetd = false
@@ -107,13 +114,17 @@ function transform(ob) {
     let bad_width = false
     if ('src' in ob.attribs) {
       if ('width' in ob.attribs) {
-        if (ob.attribs['width'] <= 100 && ob.attribs['height'] <= 100) {
+        if ((!isNaN(ob.attribs['width'])) && ob.attribs['height'] <= 100) {
+          bad_width = true
+        }
+      }
+      if ('height' in ob.attribs) {
+        if ((!isNaN(ob.attribs['height'])) && ob.attribs['height'] <= 100) {
           bad_width = true
         }
       }
       if (!bad_width) {
         if ('srcset' in ob.attribs) {
-          console.log(ob.attribs['srcset'].split(', '))
           let srcset = ob.attribs['srcset'].split(', ')
           srcset = srcset[srcset.length - 1]
           srcset = srcset.split(' ')[0]
@@ -143,7 +154,7 @@ function transform(ob) {
       if (Array.isArray(chld)) {
         root.children = root.children.concat(chld)
       } else {
-        root.children.push(transform(childs[i]))
+        root.children.push(chld)
       }
     }
   }
@@ -157,7 +168,4 @@ function transform(ob) {
   }
 
   return root
-
-
-
 }
