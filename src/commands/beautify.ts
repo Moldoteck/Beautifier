@@ -116,7 +116,7 @@ function transform(ob) {
     root.tag = 'h4'
   }
 
-  if (!allowed_tags.includes(root.tag) && !['div', 'section', 'details', 'summary'].includes(root.tag)) {
+  if (!allowed_tags.includes(root.tag) && !['div', 'section', 'article', 'details', 'summary'].includes(root.tag)) {
     return ""
   }
 
@@ -178,7 +178,7 @@ function transform(ob) {
     delete root['children'];
   }
 
-  if (['div', 'section'].includes(root.tag)) {
+  if (['div', 'section', 'article'].includes(root.tag)) {
     return root.children
   }
   if (root.tag == 'details') {
