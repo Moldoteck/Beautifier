@@ -42,7 +42,8 @@ export function setupBeautify(bot: Telegraf<Context>) {
             const virtualConsole = new jsdom.VirtualConsole();
             let document = await ndl('get', link, { follow_max: 5 })
 
-            var doc = new JSDOM(document.body, { virtualConsole })
+            var doc = new JSDOM(document.body, { virtualConsole, 
+              url: link })
             //check if should parse
             if (isProbablyReaderable(doc.window.document)) {
               let parsed = new Readability(doc.window.document).parse()
@@ -73,22 +74,27 @@ export function setupBeautify(bot: Telegraf<Context>) {
               // console.log(transformed)
               let chil = transformed.children.filter(elem => (typeof elem != 'string') || (typeof elem == 'string' && elem.replace(/\s/g, '').length > 0))
 
-              if ((new util.TextEncoder().encode('' + chil)).length > 1520) {
-                while ((new util.TextEncoder().encode('' + chil)).length > 1520) {
-                  chil = chil.slice(0, chil.length - 2)
+              //1520
+              if ((new util.TextEncoder().encode(JSON.stringify(chil))).length > 63000) {
+                let ln=(new util.TextEncoder().encode(JSON.stringify(chil))).length 
+                while (ln > 63000) {
+                  chil = chil.slice(0, chil.length - 1)
+                  ln=(new util.TextEncoder().encode(JSON.stringify(chil))).length 
+                  // console.log((new util.TextEncoder().encode(JSON.stringify(chil))).length)
                 }
-                chil.push({tag:'p', children:['TRIMMED DOCUMENT']})
+                chil.push({ tag: 'p', children: ['TRIMMED DOCUMENT'] })
                 //split into two articles
               }
-              
-                console.log(JSON.stringify(chil, null, 2))
-                const ph = new telegraph()
-                const random_token = process.env.TELEGRAPH_TOKEN
-                let pg = await ph.createPage(random_token, title, chil, {
-                  return_content: true
-                })
-                ctx.replyWithHTML(`<a href='${pg.url}'>Beautiful link</a>`, { reply_to_message_id: ctx.message.message_id })
-                console.log(pg.url)
+
+              console.log(chil.length)
+              // console.log(JSON.stringify(chil))
+              const ph = new telegraph()
+              const random_token = process.env.TELEGRAPH_TOKEN
+              let pg = await ph.createPage(random_token, title, chil, {
+                return_content: true
+              })
+              ctx.replyWithHTML(`<a href='${pg.url}'>Beautiful link</a>`, { reply_to_message_id: ctx.message.message_id })
+              console.log(pg.url)
             }
           }
         });
