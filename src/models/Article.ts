@@ -3,8 +3,8 @@ import { prop, getModelForClass } from '@typegoose/typegoose'
 export class Article {
   @prop({ required: true, default: '' })
   url: string
-  @prop({ required: true, default: '' })
-  telegraph_url: string
+  @prop({ required: true, default: [] })
+  telegraph_url: [string]
 }
 
 // Get Article model
@@ -13,7 +13,7 @@ const ArticleModel = getModelForClass(Article, {
 })
 
 // Create article
-export async function createArticle(url: string, telegraph_url: string) {
+export async function createArticle(url: string, telegraph_url: string[]) {
   // await ArticleModel.deleteMany({})
   let article = await ArticleModel.findOne({ url })
   if (!article) {
@@ -27,7 +27,7 @@ export async function createArticle(url: string, telegraph_url: string) {
 }
 // Get article
 export async function findArticle(url: string) {
-  // await ArticleModel.deleteMany({})
+  await ArticleModel.deleteMany({})
   let article = await ArticleModel.findOne({ url })
   return article
 }

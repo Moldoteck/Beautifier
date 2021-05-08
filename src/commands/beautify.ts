@@ -45,8 +45,8 @@ export function setupBeautify(bot: Telegraf<Context>) {
       detected_urls.forEach(async link => {
         let art = await findArticle(link)
         if (art) {
-          let telegraf_links = `<a href='${art.telegraph_url}'>Beautiful link</a> `
-          ctx.replyWithHTML(telegraf_links, { reply_to_message_id: ctx.message.message_id })
+          let telegraf_links = transformLinks(art.telegraph_url)//`<a href='${art.telegraph_url}'>Beautiful link</a> `
+          ctx.replyWithHTML(telegraf_links.join(' '), { reply_to_message_id: ctx.message.message_id })
         } else {
           if (!link.includes('telegra.ph')) {
             const virtualConsole = new jsdom.VirtualConsole();
@@ -87,10 +87,10 @@ export function setupBeautify(bot: Telegraf<Context>) {
 
               const ph = new telegraph()
               const random_token = process.env.TELEGRAPH_TOKEN
-              let telegraf_links = []
+              let telegraf_links = Array<string>()
               while (chil.length > 0) {
-                console.log(ln)
                 ln = (text_encoder.encode(JSON.stringify(chil))).length
+                console.log(ln)
                 while (ln > 63000) {
                   extra_chil.unshift(chil[chil.length - 1])
                   chil = chil.slice(0, chil.length - 1)
@@ -101,13 +101,13 @@ export function setupBeautify(bot: Telegraf<Context>) {
                   return_content: true
                 })
 
-                chil = [...extra_chil]
+                chil = extra_chil
                 extra_chil = []
-                telegraf_links.push(`<a href='${pg.url}'>Beautiful link</a> `)
-                if (telegraf_links.length == 1) {
-                  await createArticle(link, pg.url)
-                }
+                telegraf_links.push(pg.url)
               }
+
+              await createArticle(link, telegraf_links)
+              telegraf_links = transformLinks(telegraf_links)
 
               ctx.replyWithHTML(telegraf_links.join(' '), { reply_to_message_id: ctx.message.message_id })
             }
@@ -119,6 +119,15 @@ export function setupBeautify(bot: Telegraf<Context>) {
   bot.command(['help', 'start'], (ctx) => {
     ctx.replyWithHTML(ctx.i18n.t('help'))
   })
+}
+
+function transformLinks(links) {
+  let transformed = []
+  let i = 0
+  for (i = 0; i < links.length; ++i) {
+    transformed.push(`<a href='${links[i]}'>Beautiful link ${i + 1}</a> `)
+  }
+  return transformed
 }
 
 const allowed_tags = ['body', 'a', 'aside', 'b', 'blockquote', 'br', 'code', 'em', 'figcaption', 'figure', 'h3', 'h4', 'hr', 'i', 'iframe', 'img', 'li', 'ol', 'p', 'pre', 's', 'strong', 'u', 'ul', 'video']
