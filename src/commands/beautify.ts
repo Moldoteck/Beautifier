@@ -66,7 +66,7 @@ export function setupBeautify(bot: Telegraf<Context>) {
         if (!link.includes('http')) {
           link = 'http://' + link
         }
-        let art:DocumentType<Article> = await findArticle(link)
+        let art: DocumentType<Article> = await findArticle(link)
         if (art) {
           let telegraf_links = transformLinks(art.telegraph_url)//`<a href='${art.telegraph_url}'>Beautiful link</a> `
           ctx.replyWithHTML(telegraf_links.join(' '), { reply_to_message_id: ctx.message.message_id })
@@ -112,7 +112,7 @@ export function setupBeautify(bot: Telegraf<Context>) {
 
               chil.unshift({ tag: 'br' })
               chil.unshift({ tag: 'a', attrs: { href: link }, children: ['Original link'] })
-
+              
               let extra_chil = []
               let text_encoder = new util.TextEncoder()
               let ln = (text_encoder.encode(JSON.stringify(chil))).length
@@ -149,7 +149,6 @@ export function setupBeautify(bot: Telegraf<Context>) {
       });
     }
   })
-
 }
 
 function transformLinks(links) {
@@ -165,7 +164,7 @@ function transformLinks(links) {
   return transformed
 }
 
-const allowed_tags = ['body', 'a', 'aside', 'b', 'blockquote', 'br', 'code', 'em', 'figcaption', 'figure', 'h3', 'h4', 'hr', 'i', 'iframe', 'img', 'li', 'ol', 'p', 'pre', 's', 'strong', 'u', 'ul', 'video']
+const allowed_tags = ['body', 'iframe', 'video', 'a', 'aside', 'b', 'blockquote', 'br', 'code', 'em', 'figcaption', 'figure', 'h3', 'h4', 'hr', 'i', 'img', 'li', 'ol', 'p', 'pre', 's', 'strong', 'u', 'ul']
 const block_tags = ['div', 'section', 'article', 'main', 'header', 'span']
 
 function parseAttribs(root, ob) {
@@ -188,13 +187,13 @@ function parseAttribs(root, ob) {
         }
       }
       if (!bad_width) {
-        if ('srcset' in ob.attribs) {
+        if ('srcset' in ob.attribs && ob.attribs['srcset'].length > 0) {
           let srcset = ob.attribs['srcset'].split(', ')
           srcset = srcset[srcset.length - 1]
           srcset = srcset.split(' ')[0]
           root.attrs['src'] = srcset
           at_detecetd = true
-        } else if ('data-src' in ob.attribs) {
+        } else if ('data-src' in ob.attribs && ob.attribs['data-src'].length > 0) {
           root.attrs['src'] = ob.attribs['data-src']
           at_detecetd = true
         } else {
@@ -241,6 +240,12 @@ function transform(ob) {
 
   root = parseAttribs(root, ob)
 
+  if (root.tag == 'iframe' && 'src' in root.attrs) {
+    let real_yt = `https://www.youtube.com/watch?v=` + root.attrs['src'].split('?')[0].split('/embed/')[1]
+    root = { tag: 'figure', children: [{ tag: 'iframe', attrs: { src: `/embed/youtube?url=${encodeURIComponent(real_yt)}` } }] }
+    return root
+  }
+
   if ('data-image-src' in ob.attribs) {
     root.children.push({ tag: 'img', attrs: { 'src': ob.attribs['data-image-src'] } })
   }
@@ -250,7 +255,7 @@ function transform(ob) {
     let i = 0
     for (i = 0; i < childs.length; ++i) {
       let chld = transform(childs[i])
-      if (chld != "") {
+      if (chld != "" && chld != null) {
         if (Array.isArray(chld)) {
           root.children = root.children.concat(chld)
         } else {
