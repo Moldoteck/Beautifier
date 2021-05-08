@@ -63,13 +63,14 @@ export function setupBeautify(bot: Telegraf<Context>) {
       console.log(detected_urls)
       detected_urls.forEach(async link => {
         let art = await findArticle(link)
-        if (art) {
+        if (art&&false) {
           let telegraf_links = transformLinks(art.telegraph_url)//`<a href='${art.telegraph_url}'>Beautiful link</a> `
           ctx.replyWithHTML(telegraf_links.join(' '), { reply_to_message_id: ctx.message.message_id })
         } else {
           if (!link.includes('telegra.ph')) {
             const virtualConsole = new jsdom.VirtualConsole();
-            let document = await ndl('get', link, { follow_max: 5 })
+            let document = await ndl('get', link, { follow_max: 5, decode_response :false })
+            // console.log(document.body.slice(40000,50000))
             const $ = cheerio.load(document.body)
             $('div[data-image-src]').replaceWith(function () {
               const src = $(this).attr('data-image-src')
@@ -94,6 +95,7 @@ export function setupBeautify(bot: Telegraf<Context>) {
               $.html()
               //todo: if table, transform it to image, upload to telegraph and insert path to it
 
+              // console.log($.html())
               let transformed = transform($('body')[0])
               let chil = transformed.children.filter(elem => (typeof elem != 'string') || (typeof elem == 'string' && elem.replace(/\s/g, '').length > 0))
 
@@ -116,6 +118,7 @@ export function setupBeautify(bot: Telegraf<Context>) {
                   ln = (text_encoder.encode(JSON.stringify(chil))).length
                 }
 
+                // console.log(JSON.stringify(chil, null, 2))
                 let pg = await ph.createPage(random_token, title, chil, {
                   return_content: true
                 })
@@ -202,7 +205,7 @@ function transform(ob) {
   if (ob.type == 'text') {
     if (ob.data.includes('author_name'))
       return ""
-    let wout = ob.data.replace(/\s\s+/g, ' ');
+    let wout = ob.data.replace(/\s\s+/g, ' ')
     return wout == ' ' ? "" : wout;
   }
 
