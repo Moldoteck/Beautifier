@@ -6,7 +6,7 @@ const { Readability, isProbablyReaderable } = require('@mozilla/readability');
 var { JSDOM } = require('jsdom');
 const jsdom = require('jsdom');
 const util = require('util');
-import { findArticle, createArticle, deleteArticle } from '../models'
+import { findArticle, createArticle, deleteArticle, deleteAllArticles } from '../models'
 
 function sleep(ms) {
   return new Promise((resolve) => {
@@ -48,6 +48,12 @@ export function setupBeautify(bot: Telegraf<Context>) {
       });
     }
 
+    await ctx.deleteMessage(ctx.message.message_id)
+  })
+  bot.command('clearAll', async (ctx) => {
+    if (ctx.message.from.id == 180001222) {
+      await deleteAllArticles()
+    }
     await ctx.deleteMessage(ctx.message.message_id)
   })
   bot.on('text', async ctx => {

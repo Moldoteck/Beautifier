@@ -14,7 +14,6 @@ const ArticleModel = getModelForClass(Article, {
 
 // Create article
 export async function createArticle(url: string, telegraph_url: string[]) {
-  // await ArticleModel.deleteMany({})
   let article = await ArticleModel.findOne({ url })
   if (!article) {
     try {
@@ -27,15 +26,19 @@ export async function createArticle(url: string, telegraph_url: string[]) {
 }
 // Get article
 export async function findArticle(url: string) {
-  // await ArticleModel.deleteMany({})
   let article = await ArticleModel.findOne({ url })
   return article
 }
 
-// Get article
+// Delete article
 export async function deleteArticle(url: string) {
   let article = await ArticleModel.findOne({ url })
   if (article) {
     await ArticleModel.deleteOne({ url })
   }
+}
+
+// Delete all articles
+export async function deleteAllArticles() {
+  await ArticleModel.deleteMany({})
 }
