@@ -1,3 +1,4 @@
+import { DocumentType } from '@typegoose/typegoose';
 import { Telegraf, Context } from 'telegraf'
 const ndl = require("needle")
 const telegraph = require('telegraph-node')
@@ -6,7 +7,7 @@ const { Readability, isProbablyReaderable } = require('@mozilla/readability');
 var { JSDOM } = require('jsdom');
 const jsdom = require('jsdom');
 const util = require('util');
-import { findArticle, createArticle, deleteArticle, deleteAllArticles } from '../models'
+import { findArticle, createArticle, deleteArticle, deleteAllArticles, Article } from '../models'
 
 function sleep(ms) {
   return new Promise((resolve) => {
@@ -58,11 +59,14 @@ export function setupBeautify(bot: Telegraf<Context>) {
   })
   bot.on('text', async ctx => {
     if (ctx.message.text !== undefined) {
-      let detected_urls = detectURL(ctx.message)
+      let detected_urls: string[] = detectURL(ctx.message)
 
       console.log(detected_urls)
-      detected_urls.forEach(async link => {
-        let art = await findArticle(link)
+      detected_urls.forEach(async (link: string) => {
+        if (!link.includes('http')) {
+          link = 'http://' + link
+        }
+        let art:DocumentType<Article> = await findArticle(link)
         if (art) {
           let telegraf_links = transformLinks(art.telegraph_url)//`<a href='${art.telegraph_url}'>Beautiful link</a> `
           ctx.replyWithHTML(telegraf_links.join(' '), { reply_to_message_id: ctx.message.message_id })
