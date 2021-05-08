@@ -164,7 +164,7 @@ function transformLinks(links) {
   return transformed
 }
 
-const allowed_tags = ['body', 'iframe', 'video', 'a', 'aside', 'b', 'blockquote', 'br', 'code', 'em', 'figcaption', 'figure', 'h3', 'h4', 'hr', 'i', 'img', 'li', 'ol', 'p', 'pre', 's', 'strong', 'u', 'ul']
+const allowed_tags = ['body', 'iframe', 'a', 'aside', 'b', 'blockquote', 'br', 'code', 'em', 'figcaption', 'figure', 'h3', 'h4', 'hr', 'i', 'img', 'li', 'ol', 'p', 'pre', 's', 'strong', 'u', 'ul']
 const block_tags = ['div', 'section', 'article', 'main', 'header', 'span']
 
 function parseAttribs(root, ob) {
@@ -243,7 +243,7 @@ function transform(ob) {
   if (root.tag == 'iframe' && 'src' in root.attrs) {
     let real_yt = `https://www.youtube.com/watch?v=` + root.attrs['src'].split('?')[0].split('/embed/')[1]
     root = { tag: 'figure', children: [{ tag: 'iframe', attrs: { src: `/embed/youtube?url=${encodeURIComponent(real_yt)}` } }] }
-    return root
+    // return root
   }
 
   if ('data-image-src' in ob.attribs) {
