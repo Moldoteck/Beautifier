@@ -76,10 +76,17 @@ export function setupBeautify(bot: Telegraf<Context>) {
               const src = $(this).attr('data-image-src')
               return `<img src=${src}>`
             })
-            var doc = new JSDOM($.html(), {
-              virtualConsole,
-              url: link
-            })
+            var doc = undefined
+            try {
+              doc = new JSDOM($.html(), {
+                virtualConsole,
+                url: link
+              })
+            } catch {
+              doc = new JSDOM($.html(), {
+                virtualConsole
+              })
+            }
 
             var documentClone = doc.window.document.cloneNode(true);
             if (isProbablyReaderable(documentClone)) {
