@@ -6,7 +6,7 @@ const { Readability, isProbablyReaderable } = require('@mozilla/readability');
 var { JSDOM } = require('jsdom');
 const jsdom = require('jsdom');
 const util = require('util');
-import { findArticle, createArticle } from '../models'
+import { findArticle, createArticle, deleteArticle } from '../models'
 
 function sleep(ms) {
   return new Promise((resolve) => {
@@ -14,8 +14,8 @@ function sleep(ms) {
   });
 }
 
-function detectURL(ctx) {
-  const entities = ctx.message.entities || []
+function detectURL(message) {
+  const entities = message.entities || []
   let detected_urls = []
   for (const entity of entities) {
     if (entity.type === 'text_link' || entity.type === 'url') {
@@ -25,7 +25,7 @@ function detectURL(ctx) {
       }
       else {
         console.log('not url')
-        detected_urls.push((ctx.message.text).substr(
+        detected_urls.push((message.text).substr(
           entity.offset,
           entity.length
         ))
@@ -37,9 +37,22 @@ function detectURL(ctx) {
 }
 
 export function setupBeautify(bot: Telegraf<Context>) {
+  bot.command(['help', 'start'], (ctx) => {
+    ctx.replyWithHTML(ctx.i18n.t('help'))
+  })
+  bot.command('clear', async (ctx) => {
+    if ('entities' in ctx.message.reply_to_message) {
+      let urls = detectURL(ctx.message.reply_to_message)
+      urls.forEach(async element => {
+        await deleteArticle(element)
+      });
+    }
+
+    await ctx.deleteMessage(ctx.message.message_id)
+  })
   bot.on('text', async ctx => {
     if (ctx.message.text !== undefined) {
-      let detected_urls = detectURL(ctx)
+      let detected_urls = detectURL(ctx.message)
 
       console.log(detected_urls)
       detected_urls.forEach(async link => {
@@ -116,16 +129,18 @@ export function setupBeautify(bot: Telegraf<Context>) {
       });
     }
   })
-  bot.command(['help', 'start'], (ctx) => {
-    ctx.replyWithHTML(ctx.i18n.t('help'))
-  })
+
 }
 
 function transformLinks(links) {
   let transformed = []
-  let i = 0
-  for (i = 0; i < links.length; ++i) {
-    transformed.push(`<a href='${links[i]}'>Beautiful link ${i + 1}</a> `)
+  if (links.length == 1) {
+    transformed.push(`<a href='${links[0]}'>Beautiful link</a> `)
+  } else {
+    let i = 0
+    for (i = 0; i < links.length; ++i) {
+      transformed.push(`<a href='${links[i]}'>Beautiful link ${i + 1}</a> `)
+    }
   }
   return transformed
 }

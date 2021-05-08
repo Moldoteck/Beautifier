@@ -27,7 +27,15 @@ export async function createArticle(url: string, telegraph_url: string[]) {
 }
 // Get article
 export async function findArticle(url: string) {
-  await ArticleModel.deleteMany({})
+  // await ArticleModel.deleteMany({})
   let article = await ArticleModel.findOne({ url })
   return article
+}
+
+// Get article
+export async function deleteArticle(url: string) {
+  let article = await ArticleModel.findOne({ url })
+  if (article) {
+    await ArticleModel.deleteOne({ url })
+  }
 }
