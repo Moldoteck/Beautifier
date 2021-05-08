@@ -1,12 +1,12 @@
 import { Telegraf, Context } from 'telegraf'
 const ndl = require("needle")
-const puppeteer = require('puppeteer')
 const telegraph = require('telegraph-node')
 const cheerio = require('cheerio')
 const { Readability, isProbablyReaderable } = require('@mozilla/readability');
 var { JSDOM } = require('jsdom');
 const jsdom = require('jsdom');
 const util = require('util');
+import { findArticle, createArticle } from '../models'
 
 function sleep(ms) {
   return new Promise((resolve) => {
@@ -43,65 +43,74 @@ export function setupBeautify(bot: Telegraf<Context>) {
 
       console.log(detected_urls)
       detected_urls.forEach(async link => {
-        if (!link.includes('telegra.ph')) {
-          const virtualConsole = new jsdom.VirtualConsole();
-          let document = await ndl('get', link, { follow_max: 5 })
-          const $ = cheerio.load(document.body)
-          $('div[data-image-src]').replaceWith(function () {
-            const src = $(this).attr('data-image-src')
-            return `<img src=${src}>`
-          })
-          var doc = new JSDOM($.html(), {
-            virtualConsole,
-            url: link
-          })
-          
-          var documentClone = doc.window.document.cloneNode(true);
-          if (isProbablyReaderable(documentClone)) {
-            let parsed = new Readability(documentClone).parse()
-            if (parsed == null) {
-              console.log('parsed is null')
-              return
-            }
-            let content = parsed.content//if null try to process directly with cheerio
-            let title = parsed.title
+        let art = await findArticle(link)
+        if (art) {
+          let telegraf_links = `<a href='${art.telegraph_url}'>Beautiful link</a> `
+          ctx.replyWithHTML(telegraf_links, { reply_to_message_id: ctx.message.message_id })
+        } else {
+          if (!link.includes('telegra.ph')) {
+            const virtualConsole = new jsdom.VirtualConsole();
+            let document = await ndl('get', link, { follow_max: 5 })
+            const $ = cheerio.load(document.body)
+            $('div[data-image-src]').replaceWith(function () {
+              const src = $(this).attr('data-image-src')
+              return `<img src=${src}>`
+            })
+            var doc = new JSDOM($.html(), {
+              virtualConsole,
+              url: link
+            })
 
-            const $ = cheerio.load(content)
-            $.html()
-            //todo: if table, transform it to image, upload to telegraph and insert path to it
+            var documentClone = doc.window.document.cloneNode(true);
+            if (isProbablyReaderable(documentClone)) {
+              let parsed = new Readability(documentClone).parse()
+              if (parsed == null) {
+                console.log('parsed is null')
+                return
+              }
+              let content = parsed.content//if null try to process directly with cheerio
+              let title = parsed.title
 
-            let transformed = transform($('body')[0])
-            let chil = transformed.children.filter(elem => (typeof elem != 'string') || (typeof elem == 'string' && elem.replace(/\s/g, '').length > 0))
+              const $ = cheerio.load(content)
+              $.html()
+              //todo: if table, transform it to image, upload to telegraph and insert path to it
 
-            chil.unshift({ tag: 'br' })
-            chil.unshift({ tag: 'a', attrs: { href: link }, children: ['Original link'] })
+              let transformed = transform($('body')[0])
+              let chil = transformed.children.filter(elem => (typeof elem != 'string') || (typeof elem == 'string' && elem.replace(/\s/g, '').length > 0))
 
-            let extra_chil = []
-            let text_encoder = new util.TextEncoder()
-            let ln = (text_encoder.encode(JSON.stringify(chil))).length
+              chil.unshift({ tag: 'br' })
+              chil.unshift({ tag: 'a', attrs: { href: link }, children: ['Original link'] })
 
-            const ph = new telegraph()
-            const random_token = process.env.TELEGRAPH_TOKEN
-            let telegraf_links = ""
-            while (chil.length > 0) {
-              console.log(ln)
-              ln = (text_encoder.encode(JSON.stringify(chil))).length
-              while (ln > 63000) {
-                extra_chil.unshift(chil[chil.length - 1])
-                chil = chil.slice(0, chil.length - 1)
+              let extra_chil = []
+              let text_encoder = new util.TextEncoder()
+              let ln = (text_encoder.encode(JSON.stringify(chil))).length
+
+              const ph = new telegraph()
+              const random_token = process.env.TELEGRAPH_TOKEN
+              let telegraf_links = []
+              while (chil.length > 0) {
+                console.log(ln)
                 ln = (text_encoder.encode(JSON.stringify(chil))).length
+                while (ln > 63000) {
+                  extra_chil.unshift(chil[chil.length - 1])
+                  chil = chil.slice(0, chil.length - 1)
+                  ln = (text_encoder.encode(JSON.stringify(chil))).length
+                }
+
+                let pg = await ph.createPage(random_token, title, chil, {
+                  return_content: true
+                })
+
+                chil = [...extra_chil]
+                extra_chil = []
+                telegraf_links.push(`<a href='${pg.url}'>Beautiful link</a> `)
+                if (telegraf_links.length == 1) {
+                  await createArticle(link, pg.url)
+                }
               }
 
-              let pg = await ph.createPage(random_token, title, chil, {
-                return_content: true
-              })
-
-              chil = [...extra_chil]
-              extra_chil = []
-              telegraf_links = telegraf_links.concat(`<a href='${pg.url}'>Beautiful link</a> `)
+              ctx.replyWithHTML(telegraf_links.join(' '), { reply_to_message_id: ctx.message.message_id })
             }
-
-            ctx.replyWithHTML(telegraf_links, { reply_to_message_id: ctx.message.message_id })
           }
         }
       });
