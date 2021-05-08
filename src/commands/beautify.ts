@@ -155,11 +155,11 @@ export function setupBeautify(bot: Telegraf<Context>) {
 function transformLinks(links) {
   let transformed = []
   if (links.length == 1) {
-    transformed.push(`<a href='${links[0]}'>Beautiful link</a> `)
+    transformed.push(`<a href='${links[0]}'>Beautiful link</a>`)
   } else {
     let i = 0
     for (i = 0; i < links.length; ++i) {
-      transformed.push(`<a href='${links[i]}'>Beautiful link ${i + 1}</a> `)
+      transformed.push(`<a href='${links[i]}'>Beautiful link ${i + 1}</a>`)
     }
   }
   return transformed
