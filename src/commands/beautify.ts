@@ -112,6 +112,8 @@ export function setupBeautify(bot: Telegraf<Context>) {
 
               chil.unshift({ tag: 'br' })
               chil.unshift({ tag: 'a', attrs: { href: link }, children: ['Original link'] })
+              chil.unshift({ tag: 'br' })
+              chil.unshift({ tag: 'a', attrs: { href: 'https://t.me/BeautifierSimplifierBot' }, children: ['Made with Beautifier'] })
               
               let extra_chil = []
               let text_encoder = new util.TextEncoder()
