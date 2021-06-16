@@ -1,5 +1,5 @@
 name: English
 help: |
-  <b>Bot</b> allows you to see how Telegraf bots can be built.
+  Tired of slow web pages full of ads? Wouldn't be better if all links were <b>Instant View's</b>?. Well, this <b>Bot</b> can transform almost any link into an Instant View, keeping only meaningful information, <b>just forward a link to it</b>. If you add the bot to a group, it will try to transform any encountered link into an Instant View.
 language: Please, select the language.
 language_selected: <b>Bot</b> now speaks English.
