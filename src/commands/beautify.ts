@@ -71,7 +71,7 @@ export function setupBeautify(bot: Telegraf<Context>) {
           let telegraf_links = transformLinks(art.telegraph_url)//`<a href='${art.telegraph_url}'>Beautiful link</a> `
           ctx.replyWithHTML(telegraf_links.join(' '), { reply_to_message_id: ctx.message.message_id })
         } else {
-          if (!link.includes('telegra.ph')) {
+          if (!link.includes('telegra.ph') && !link.includes('tprg.ru') && !link.includes('tproger.ru')) {
             const virtualConsole = new jsdom.VirtualConsole();
             let document = await ndl('get', link, { follow_max: 5, decode_response: false })
             // console.log(document.body.slice(40000,50000))
