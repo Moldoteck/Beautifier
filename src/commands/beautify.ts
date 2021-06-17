@@ -63,8 +63,8 @@ export function setupBeautify(bot: Telegraf<Context>) {
     }
     await ctx.deleteMessage(ctx.message.message_id)
   })
-  bot.on('text', async ctx => {
-    if (ctx.message.text !== undefined || ctx.message.caption !== undefined) {
+  bot.on(['text', 'message'], async ctx => {
+    if ('text' in ctx.message || 'caption' in ctx.message) {
       let detected_urls: string[] = detectURL(ctx.message)
 
       console.log(detected_urls)
