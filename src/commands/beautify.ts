@@ -14,22 +14,28 @@ function sleep(ms) {
     setTimeout(resolve, ms);
   });
 }
-
 function detectURL(message) {
-  const entities = message.entities || []
+  const entities = message.entities || message.caption_entities || []
   let detected_urls = []
   for (const entity of entities) {
     if (entity.type === 'text_link' || entity.type === 'url') {
       if ('url' in entity) {
-        console.log('url')
         detected_urls.push(entity.url)
       }
       else {
-        console.log('not url')
-        detected_urls.push((message.text).substr(
-          entity.offset,
-          entity.length
-        ))
+        if ('text' in message) {
+          let det_url = (message.text).substr(
+            entity.offset,
+            entity.length
+          )
+          detected_urls.push(det_url)
+        }
+        else if ('caption' in message) {
+          let det_url = (message.caption).substr(
+            entity.offset,
+            entity.length
+          )
+          detected_urls.push(det_url)
       }
     }
   }
@@ -58,7 +64,7 @@ export function setupBeautify(bot: Telegraf<Context>) {
     await ctx.deleteMessage(ctx.message.message_id)
   })
   bot.on('text', async ctx => {
-    if (ctx.message.text !== undefined) {
+    if (ctx.message.text !== undefined || ctx.message.caption !== undefined) {
       let detected_urls: string[] = detectURL(ctx.message)
 
       console.log(detected_urls)
