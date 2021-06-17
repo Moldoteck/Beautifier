@@ -36,6 +36,7 @@ function detectURL(message) {
             entity.length
           )
           detected_urls.push(det_url)
+        }
       }
     }
   }
