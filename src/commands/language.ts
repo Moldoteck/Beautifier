@@ -1,4 +1,6 @@
-import { Telegraf, Context, Markup as m } from 'telegraf'
+import { Markup as m } from 'telegraf'
+import { Context, Telegraf } from 'telegraf'
+
 import { readdirSync, readFileSync } from 'fs'
 import { safeLoad } from 'js-yaml'
 
@@ -10,10 +12,10 @@ export function setupLanguage(bot: Telegraf<Context>) {
   bot.action(
     localesFiles().map((file) => file.split('.')[0]),
     async (ctx) => {
+      let chat = ctx.dbchat
       if ("data" in ctx.callbackQuery) {
-        let user = ctx.dbuser
-        user.language = ctx.callbackQuery.data
-        user = await (user as any).save()
+        chat.language = ctx.callbackQuery.data
+        chat = await (chat as any).save()
         const message = ctx.callbackQuery.message
 
         const anyI18N = ctx.i18n as any
@@ -52,6 +54,7 @@ function languageKeyboard() {
       }
     }
   })
+  m.inlineKeyboard
   return m.inlineKeyboard(result)
 }
 
