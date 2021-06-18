@@ -68,8 +68,15 @@ export function setupBeautify(bot: Telegraf<Context>) {
     }
     await ctx.deleteMessage(ctx.message.message_id)
   })
+
+  bot.command('interactive', async (ctx) => {
+    let chat = ctx.dbchat
+    chat.interactive = !chat.interactive
+    chat = await (chat as any).save()
+  })
+
   bot.on(['text', 'message'], async ctx => {
-    if (ctx.dbchat.interactive) {
+    if (ctx.dbchat.interactive || ctx.message.chat.type == 'private') {
       if ('text' in ctx.message || 'caption' in ctx.message) {
         let [detected_urls, url_place] = detectURL(ctx.message)
 
