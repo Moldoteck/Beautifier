@@ -205,7 +205,7 @@ export function setupBeautify(bot: Telegraf<Context>) {
         let txt = msg.substr(start, offset)
         // let lnk = `<a href='${elem}'>${txt}</a>`
         let lnk = ''
-        if ('telegra.ph' in elem) {
+        if (elem.includes('telegra.ph')) {
           lnk = `<a href='${elem}'>Instant View</a>`
         } else {
           lnk = `<a href='${elem}'>${txt}</a>`
