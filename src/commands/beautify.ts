@@ -204,7 +204,12 @@ export function setupBeautify(bot: Telegraf<Context>) {
         let offset = url_place[ind][1]
         let txt = msg.substr(start, offset)
         // let lnk = `<a href='${elem}'>${txt}</a>`
-        let lnk = `<a href='${elem}'>Instant View</a>`
+        let lnk = ''
+        if ('telegra.ph' in elem) {
+          lnk = `<a href='${elem}'>Instant View</a>`
+        } else {
+          lnk = `<a href='${elem}'>${txt}</a>`
+        }
         if (ind == 0) {
           new_msg = msg.substr(0, start) + lnk
           last_ind = start + offset
