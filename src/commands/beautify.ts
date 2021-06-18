@@ -136,6 +136,7 @@ export function setupBeautify(bot: Telegraf<Context>) {
               const ph = new telegraph()
               const random_token = process.env.TELEGRAPH_TOKEN
               let telegraf_links = Array<string>()
+              let article_parts = []
               while (chil.length > 0) {
                 ln = (text_encoder.encode(JSON.stringify(chil))).length
                 while (ln > 63000) {
@@ -143,17 +144,44 @@ export function setupBeautify(bot: Telegraf<Context>) {
                   chil = chil.slice(0, chil.length - 1)
                   ln = (text_encoder.encode(JSON.stringify(chil))).length
                 }
-
+                article_parts.push(chil)
                 // console.log(JSON.stringify(chil, null, 2))
-                let pg = await ph.createPage(random_token, title, chil, {
-                  return_content: true
-                })
+                // let pg = await ph.createPage(random_token, title, chil, {
+                //   return_content: true
+                // })
 
                 chil = extra_chil
                 extra_chil = []
+                // telegraf_links.push(pg.url)
+              }
+              let prev_url = ''
+              let pg = undefined
+              for (let art_i = article_parts.length - 1; art_i >= 0; --art_i) {
+                let part = article_parts[art_i]
+                if (prev_url.length > 0) {
+                  if (art_i != 0) {
+                    part.unshift({ tag: 'br' })
+                    part.unshift({ tag: 'a', attrs: { href: link }, children: ['Original link'] })
+                    part.unshift({ tag: 'br' })
+                    part.unshift({ tag: 'a', attrs: { href: 'https://t.me/BeautifierSimplifierBot' }, children: ['Made with Beautifier'] })
+                  }
+                  part.unshift({ tag: 'br' })
+                  part.unshift({ tag: 'h3', children: [{ tag: 'a', attrs: { href: `${prev_url}` }, children: [`Next part ${art_i + 1}`] }] })
+                }else{
+                  if(article_parts.length>1){
+                    part.unshift({ tag: 'br' })
+                    part.unshift({ tag: 'a', attrs: { href: link }, children: ['Original link'] })
+                    part.unshift({ tag: 'br' })
+                    part.unshift({ tag: 'a', attrs: { href: 'https://t.me/BeautifierSimplifierBot' }, children: ['Made with Beautifier'] })
+                  }
+                }
+                pg = await ph.createPage(random_token, title, part, {
+                  return_content: true
+                })
+                prev_url = pg.url
                 telegraf_links.push(pg.url)
               }
-
+              telegraf_links.reverse()
               await createArticle(link, telegraf_links)
 
               final_urls.push(telegraf_links[0])
