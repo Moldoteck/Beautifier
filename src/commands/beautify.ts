@@ -204,7 +204,8 @@ export function setupBeautify(bot: Telegraf<Context>) {
         let start = url_place[ind][0]
         let offset = url_place[ind][1]
         let txt = msg.substr(start, offset)
-        let lnk = `<a href='${elem}'>${txt}</a>`
+        // let lnk = `<a href='${elem}'>${txt}</a>`
+        let lnk = `<a href='${elem}'>transformed link</a>`
         if (ind == 0) {
           new_msg = msg.substr(0, start) + lnk
           last_ind = start + offset
