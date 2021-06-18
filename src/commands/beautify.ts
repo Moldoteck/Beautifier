@@ -83,7 +83,6 @@ export function setupBeautify(bot: Telegraf<Context>) {
         if (art) {
           final_urls.push(art.telegraph_url[0])
           let telegraf_links = transformLinks(art.telegraph_url)//`<a href='${art.telegraph_url}'>Beautiful link</a> `
-          ctx.replyWithHTML(telegraf_links.join(' '), { reply_to_message_id: ctx.message.message_id })
         } else {
           if (!link.includes('telegra.ph') && !link.includes('tprg.ru') && !link.includes('tproger.ru')) {
             const virtualConsole = new jsdom.VirtualConsole();
@@ -167,8 +166,8 @@ export function setupBeautify(bot: Telegraf<Context>) {
                   }
                   part.unshift({ tag: 'br' })
                   part.unshift({ tag: 'h3', children: [{ tag: 'a', attrs: { href: `${prev_url}` }, children: [`Next part ${art_i + 1}`] }] })
-                }else{
-                  if(article_parts.length>1){
+                } else {
+                  if (article_parts.length > 1) {
                     part.unshift({ tag: 'br' })
                     part.unshift({ tag: 'a', attrs: { href: link }, children: ['Original link'] })
                     part.unshift({ tag: 'br' })
