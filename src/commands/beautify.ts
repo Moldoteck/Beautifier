@@ -73,6 +73,7 @@ export function setupBeautify(bot: Telegraf<Context>) {
     let chat = ctx.dbchat
     chat.interactive = !chat.interactive
     chat = await (chat as any).save()
+    ctx.reply('ok')
   })
 
   bot.on(['text', 'message'], async ctx => {
