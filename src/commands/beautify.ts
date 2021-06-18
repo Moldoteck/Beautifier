@@ -204,7 +204,7 @@ export function setupBeautify(bot: Telegraf<Context>) {
         let offset = url_place[ind][1]
         let txt = msg.substr(start, offset)
         // let lnk = `<a href='${elem}'>${txt}</a>`
-        let lnk = `<a href='${elem}'>transformed link</a>`
+        let lnk = `<a href='${elem}'>Instant View</a>`
         if (ind == 0) {
           new_msg = msg.substr(0, start) + lnk
           last_ind = start + offset
@@ -213,6 +213,7 @@ export function setupBeautify(bot: Telegraf<Context>) {
           last_ind = start + offset
         }
       }
+      new_msg = new_msg + msg.substring(last_ind, msg.length)
       if (new_msg.length > 0) {
         ctx.replyWithHTML(new_msg, { reply_to_message_id: ctx.message.message_id })
       }
