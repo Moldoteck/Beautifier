@@ -17,10 +17,12 @@ function sleep(ms) {
 function detectURL(message) {
   const entities = message.entities || message.caption_entities || []
   let detected_urls = []
+  let url_place = []
   for (const entity of entities) {
     if (entity.type === 'text_link' || entity.type === 'url') {
       if ('url' in entity) {
         detected_urls.push(entity.url)
+        url_place.push([entity.offset, entity.length])
       }
       else {
         if ('text' in message) {
@@ -28,6 +30,7 @@ function detectURL(message) {
             entity.offset,
             entity.length
           )
+          url_place.push([entity.offset, entity.length])
           detected_urls.push(det_url)
         }
         else if ('caption' in message) {
@@ -35,13 +38,14 @@ function detectURL(message) {
             entity.offset,
             entity.length
           )
+          url_place.push([entity.offset, entity.length])
           detected_urls.push(det_url)
         }
       }
     }
   }
   //todo: delete duplicates
-  return detected_urls
+  return [detected_urls, url_place]
 }
 
 export function setupBeautify(bot: Telegraf<Context>) {
@@ -50,7 +54,7 @@ export function setupBeautify(bot: Telegraf<Context>) {
   })
   bot.command('clear', async (ctx) => {
     if ('entities' in ctx.message.reply_to_message) {
-      let urls = detectURL(ctx.message.reply_to_message)
+      let [urls, _] = detectURL(ctx.message.reply_to_message)
       urls.forEach(async element => {
         await deleteArticle(element)
       });
@@ -66,15 +70,18 @@ export function setupBeautify(bot: Telegraf<Context>) {
   })
   bot.on(['text', 'message'], async ctx => {
     if ('text' in ctx.message || 'caption' in ctx.message) {
-      let detected_urls: string[] = detectURL(ctx.message)
+      let [detected_urls, url_place] = detectURL(ctx.message)
 
-      console.log(detected_urls)
-      detected_urls.forEach(async (link: string) => {
+      var final_urls = []
+
+      for (let l_ind = 0; l_ind < detected_urls.length; ++l_ind) {
+        let link = detected_urls[l_ind]
         if (!link.includes('http')) {
           link = 'http://' + link
         }
         let art: DocumentType<Article> = await findArticle(link)
         if (art) {
+          final_urls.push(art.telegraph_url[0])
           let telegraf_links = transformLinks(art.telegraph_url)//`<a href='${art.telegraph_url}'>Beautiful link</a> `
           ctx.replyWithHTML(telegraf_links.join(' '), { reply_to_message_id: ctx.message.message_id })
         } else {
@@ -121,7 +128,7 @@ export function setupBeautify(bot: Telegraf<Context>) {
               chil.unshift({ tag: 'a', attrs: { href: link }, children: ['Original link'] })
               chil.unshift({ tag: 'br' })
               chil.unshift({ tag: 'a', attrs: { href: 'https://t.me/BeautifierSimplifierBot' }, children: ['Made with Beautifier'] })
-              
+
               let extra_chil = []
               let text_encoder = new util.TextEncoder()
               let ln = (text_encoder.encode(JSON.stringify(chil))).length
@@ -131,7 +138,6 @@ export function setupBeautify(bot: Telegraf<Context>) {
               let telegraf_links = Array<string>()
               while (chil.length > 0) {
                 ln = (text_encoder.encode(JSON.stringify(chil))).length
-                console.log(ln)
                 while (ln > 63000) {
                   extra_chil.unshift(chil[chil.length - 1])
                   chil = chil.slice(0, chil.length - 1)
@@ -149,13 +155,39 @@ export function setupBeautify(bot: Telegraf<Context>) {
               }
 
               await createArticle(link, telegraf_links)
-              telegraf_links = transformLinks(telegraf_links)
 
-              ctx.replyWithHTML(telegraf_links.join(' '), { reply_to_message_id: ctx.message.message_id })
+              final_urls.push(telegraf_links[0])
+              console.log(final_urls)
+              // telegraf_links = transformLinks(telegraf_links)
+
+              // ctx.replyWithHTML(telegraf_links.join(' '), { reply_to_message_id: ctx.message.message_id })
             }
           }
         }
-      });
+        if (final_urls.length < l_ind + 1) {
+          final_urls.push(link)
+        }
+      }
+      let msg = 'text' in ctx.message ? ctx.message.text : ctx.message.caption
+      let new_msg = ''
+      let last_ind = 0
+      for (let ind = 0; ind < final_urls.length; ++ind) {
+        let elem = final_urls[ind]
+        let start = url_place[ind][0]
+        let offset = url_place[ind][1]
+        let txt = msg.substr(start, offset)
+        let lnk = `<a href='${elem}'>${txt}</a>`
+        if (ind == 0) {
+          new_msg = msg.substr(0, start) + lnk
+          last_ind = start + offset
+        } else {
+          new_msg = new_msg + msg.substring(last_ind, start) + lnk
+          last_ind = start + offset
+        }
+      }
+      if (new_msg.length > 0) {
+        ctx.replyWithHTML(new_msg, { reply_to_message_id: ctx.message.message_id })
+      }
     }
   })
 }
