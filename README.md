@@ -10,7 +10,6 @@ _Just remember, Readability and Telegraph are not perfect. Readability **can ski
 Hopefully these drawbacks will be solved in the future by using Chrome's Readability engine and by generating images of tables for telegraph.
 
 
-
 # Installation and local launch
 
 1. Clone this repo: `git clone https://github.com/Moldoteck/Beautifier`
