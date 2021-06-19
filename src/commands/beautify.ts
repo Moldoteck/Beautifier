@@ -130,6 +130,7 @@ export function setupBeautify(bot: Telegraf<Context>) {
 
                 // console.log($.html())
                 let transformed = transform($('body')[0])
+
                 let chil = transformed.children.filter(elem => (typeof elem != 'string') || (typeof elem == 'string' && elem.replace(/\s/g, '').length > 0))
 
                 chil.unshift({ tag: 'br' })
@@ -145,8 +146,13 @@ export function setupBeautify(bot: Telegraf<Context>) {
                 const random_token = process.env.TELEGRAPH_TOKEN
                 let telegraf_links = Array<string>()
                 let article_parts = []
+                // console.log('here')
+                // console.log( (text_encoder.encode(JSON.stringify(chil))).length)
+
                 while (chil.length > 0) {
                   ln = (text_encoder.encode(JSON.stringify(chil))).length
+                  if (ln > 63000 && chil.length == 1)
+                    break
                   while (ln > 63000) {
                     extra_chil.unshift(chil[chil.length - 1])
                     chil = chil.slice(0, chil.length - 1)
@@ -159,9 +165,12 @@ export function setupBeautify(bot: Telegraf<Context>) {
                   // })
 
                   chil = extra_chil
+                  // console.log(chil.length)
+                  // console.log(chil)
                   extra_chil = []
                   // telegraf_links.push(pg.url)
                 }
+                // console.log('herea')
                 let prev_url = ''
                 let pg = undefined
                 for (let art_i = article_parts.length - 1; art_i >= 0; --art_i) {
@@ -175,6 +184,9 @@ export function setupBeautify(bot: Telegraf<Context>) {
                     }
                     part.unshift({ tag: 'br' })
                     part.unshift({ tag: 'h3', children: [{ tag: 'a', attrs: { href: `${prev_url}` }, children: [`Next part ${art_i + 1}`] }] })
+                    
+                    part.push({ tag: 'br' })
+                    part.push({ tag: 'h3', children: [{ tag: 'a', attrs: { href: `${prev_url}` }, children: [`Next part ${art_i + 1}`] }] })
                   } else {
                     if (article_parts.length > 1) {
                       part.unshift({ tag: 'br' })
@@ -190,6 +202,7 @@ export function setupBeautify(bot: Telegraf<Context>) {
                   telegraf_links.push(pg.url)
                 }
                 telegraf_links.reverse()
+                // console.log('hereb')
                 await createArticle(link, telegraf_links)
 
                 final_urls.push(telegraf_links[0])
