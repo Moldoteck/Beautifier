@@ -14,7 +14,8 @@ export function setupI18N(bot: Telegraf<Context>) {
   bot.use(i18n.middleware())
   bot.use((ctx, next) => {
     const anyI18N = ctx.i18n as any
+if (ctx.dbchat){
     anyI18N.locale(ctx.dbchat.language)
-    next()
+    next()}
   })
 }
