@@ -80,7 +80,7 @@ export function setupBeautify(bot: Telegraf<Context>) {
     if (ctx.dbchat.interactive || ctx.message.chat.type == 'private') {
       if ('text' in ctx.message || 'caption' in ctx.message) {
         let [detected_urls, url_place] = detectURL(ctx.message)
-
+console.log(ctx.message)
         var final_urls = []
 
         for (let l_ind = 0; l_ind < detected_urls.length; ++l_ind) {
