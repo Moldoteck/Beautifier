@@ -7,6 +7,7 @@ It uses Mozilla's Readability Tool for extracting web content and https://telegr
 
 _Just remember, Readability and Telegraph are not perfect. Readability **can skip some images/videos**. Telegraph **can't handle tables**. For those cases, each Telegraph article have link to original article in order to quickly switch to original web page._
 
+
 Hopefully these drawbacks will be solved in the future by using Chrome's Readability engine and by generating images of tables for telegraph.
 
 
