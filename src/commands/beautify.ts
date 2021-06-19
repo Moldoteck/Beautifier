@@ -151,8 +151,8 @@ export function setupBeautify(bot: Telegraf<Context>) {
                 let prev_len=0
                 while (chil.length > 0) {
                   ln = (text_encoder.encode(JSON.stringify(chil))).length
-                 // if (prev_len==chil.length){break}
-                 // prev_len=chil.length
+                  if (prev_len==chil.length){break}
+                  prev_len=chil.length
  // if (ln > 63000 && chil.length == 1)
                   //  break
                   while (ln > 63000) {
