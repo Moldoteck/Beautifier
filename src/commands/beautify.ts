@@ -148,11 +148,13 @@ export function setupBeautify(bot: Telegraf<Context>) {
                 let article_parts = []
                 // console.log('here')
                 // console.log( (text_encoder.encode(JSON.stringify(chil))).length)
-
+                let prev_len=0
                 while (chil.length > 0) {
                   ln = (text_encoder.encode(JSON.stringify(chil))).length
-                  if (ln > 63000 && chil.length == 1)
-                    break
+                  if (prev_len==chil.length){break}
+                  prev_len=chil.length
+ // if (ln > 63000 && chil.length == 1)
+                  //  break
                   while (ln > 63000) {
                     extra_chil.unshift(chil[chil.length - 1])
                     chil = chil.slice(0, chil.length - 1)
