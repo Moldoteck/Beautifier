@@ -16,7 +16,7 @@ import { attachChat } from '@/middlewares/attachChat'
 // Check time
 bot.use(checkTime)
 // Attach user
-bot.use(attachUser)
+//bot.use(attachUser)
 // Attach chat
 bot.use(attachChat)
 // Setup localization
