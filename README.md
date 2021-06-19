@@ -1,6 +1,5 @@
 <a href='https://t.me/BeautifierSimplifierBot'>@BeautifierSimplifierBot</a>
 
-
 # Telegram bot which transforms any link in Instant View
 
 Tired of slow web pages full of ads? Wouldn't be better if all links were **Instant View's**?. Well, this <b>Bot</b> can transform almost any link into an Instant View, keeping only meaningful information, **just forward a link to it**. If you add the bot to a group, it will try to transform any encountered link into an Instant View.
