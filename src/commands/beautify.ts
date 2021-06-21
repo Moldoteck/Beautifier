@@ -1,5 +1,8 @@
+import { iv_links } from '@/helpers/iv_links';
 import { DocumentType } from '@typegoose/typegoose';
 import { Telegraf, Context } from 'telegraf'
+import { url } from 'telegraf/typings/button';
+import { URL } from 'url';
 const ndl = require("needle")
 const telegraph = require('telegraph-node')
 const cheerio = require('cheerio')
@@ -70,7 +73,7 @@ export function setupBeautify(bot: Telegraf<Context>) {
       ctx.reply(' ' + (await countChats()))
     }
   })
-  
+
   bot.command('countDocs', async (ctx) => {
     if (ctx.message.from.id == 180001222) {
       ctx.reply(' ' + (await countDocs()))
@@ -103,137 +106,149 @@ export function setupBeautify(bot: Telegraf<Context>) {
           if (!link.includes('http')) {
             link = 'http://' + link
           }
-          let art: DocumentType<Article> = await findArticle(link)
-          if (art) {
-            final_urls.push(art.telegraph_url[0])
-            let telegraf_links = transformLinks(art.telegraph_url)//`<a href='${art.telegraph_url}'>Beautiful link</a> `
+          let url_obj = new URL(link)
+          let nm = url_obj.hostname
+          if (false && (nm in iv_links)) {
+            final_urls.push(link)
+            console.log(link)
           } else {
-            if (!link.includes('telegra.ph') && !link.includes('tprg.ru') && !link.includes('tproger.ru')) {
-              const virtualConsole = new jsdom.VirtualConsole();
-              let document = await ndl('get', link, { follow_max: 5, decode_response: false })
-              // console.log(document.body.slice(40000,50000))
-              const $ = cheerio.load(document.body)
-              $('div[data-image-src]').replaceWith(function () {
-                const src = $(this).attr('data-image-src')
-                return `<img src=${src}>`
-              })
-              var doc = undefined
-              try {
-                doc = new JSDOM($.html(), {
-                  virtualConsole,
-                  url: link
+
+            let art: DocumentType<Article> = await findArticle(link)
+            if (art) {
+              final_urls.push(art.telegraph_url[0])
+              let telegraf_links = transformLinks(art.telegraph_url)//`<a href='${art.telegraph_url}'>Beautiful link</a> `
+            } else {
+              if (!link.includes('telegra.ph') && !link.includes('tprg.ru') && !link.includes('tproger.ru')) {
+                const virtualConsole = new jsdom.VirtualConsole();
+                let document = await ndl('get', link, { follow_max: 5, decode_response: false })
+
+                const $ = cheerio.load(document.body)
+                $('div[data-image-src]').replaceWith(function () {
+                  const src = $(this).attr('data-image-src')
+                  return `<img src=${src}>`
                 })
-              } catch {
-                doc = new JSDOM($.html(), {
-                  virtualConsole
-                })
-              }
-
-              var documentClone = doc.window.document.cloneNode(true);
-              if (isProbablyReaderable(documentClone)) {
-                let parsed = new Readability(documentClone).parse()
-                if (parsed == null) {
-                  console.log('parsed is null')
-                  return
-                }
-                let content = parsed.content//if null try to process directly with cheerio
-                let title = parsed.title
-
-                const $ = cheerio.load(content)
-                $.html()
-                //todo: if table, transform it to image, upload to telegraph and insert path to it
-
-                // console.log($.html())
-                let transformed = transform($('body')[0])
-
-                let chil = transformed.children.filter(elem => (typeof elem != 'string') || (typeof elem == 'string' && elem.replace(/\s/g, '').length > 0))
-
-                chil.unshift({ tag: 'br' })
-                chil.unshift({ tag: 'a', attrs: { href: link }, children: ['Original link'] })
-                chil.unshift({ tag: 'br' })
-                chil.unshift({ tag: 'a', attrs: { href: 'https://t.me/BeautifierSimplifierBot' }, children: ['Made with Beautifier'] })
-
-                let extra_chil = []
-                let text_encoder = new util.TextEncoder()
-                let ln = (text_encoder.encode(JSON.stringify(chil))).length
-
-                const ph = new telegraph()
-                const random_token = process.env.TELEGRAPH_TOKEN
-                let telegraf_links = Array<string>()
-                let article_parts = []
-                // console.log('here')
-                // console.log( (text_encoder.encode(JSON.stringify(chil))).length)
-                let prev_len = 0
-                while (chil.length > 0) {
-                  ln = (text_encoder.encode(JSON.stringify(chil))).length
-                  if (prev_len == chil.length) { break }
-                  prev_len = chil.length
-                  // if (ln > 63000 && chil.length == 1)
-                  //  break
-                  while (ln > 63000) {
-                    extra_chil.unshift(chil[chil.length - 1])
-                    chil = chil.slice(0, chil.length - 1)
-                    ln = (text_encoder.encode(JSON.stringify(chil))).length
-                  }
-                  article_parts.push(chil)
-                  // console.log(JSON.stringify(chil, null, 2))
-                  // let pg = await ph.createPage(random_token, title, chil, {
-                  //   return_content: true
-                  // })
-
-                  chil = extra_chil
-                  // console.log(chil.length)
-                  // console.log(chil)
-                  extra_chil = []
-                  // telegraf_links.push(pg.url)
-                }
-                // console.log('herea')
-                let prev_url = ''
-                let pg = undefined
-                for (let art_i = article_parts.length - 1; art_i >= 0; --art_i) {
-                  let part = article_parts[art_i]
-                  if (prev_url.length > 0) {
-                    if (art_i != 0) {
-                      part.unshift({ tag: 'br' })
-                      part.unshift({ tag: 'a', attrs: { href: link }, children: ['Original link'] })
-                      part.unshift({ tag: 'br' })
-                      part.unshift({ tag: 'a', attrs: { href: 'https://t.me/BeautifierSimplifierBot' }, children: ['Made with Beautifier'] })
-                    }
-                    part.unshift({ tag: 'br' })
-                    part.unshift({ tag: 'h3', children: [{ tag: 'a', attrs: { href: `${prev_url}` }, children: [`Next part ${art_i + 1}`] }] })
-
-                    part.push({ tag: 'br' })
-                    part.push({ tag: 'h3', children: [{ tag: 'a', attrs: { href: `${prev_url}` }, children: [`Next part ${art_i + 1}`] }] })
-                  } else {
-                    if (article_parts.length > 1) {
-                      part.unshift({ tag: 'br' })
-                      part.unshift({ tag: 'a', attrs: { href: link }, children: ['Original link'] })
-                      part.unshift({ tag: 'br' })
-                      part.unshift({ tag: 'a', attrs: { href: 'https://t.me/BeautifierSimplifierBot' }, children: ['Made with Beautifier'] })
-                    }
-                  }
-                  pg = await ph.createPage(random_token, title, part, {
-                    return_content: true
+                var doc = undefined
+                try {
+                  doc = new JSDOM($.html(), {
+                    virtualConsole,
+                    url: link
                   })
-                  prev_url = pg.url
-                  telegraf_links.push(pg.url)
+                } catch {
+                  doc = new JSDOM($.html(), {
+                    virtualConsole
+                  })
                 }
-                telegraf_links.reverse()
-                // console.log('hereb')
-                await createArticle(link, telegraf_links)
 
-                final_urls.push(telegraf_links[0])
-                // console.log(final_urls)
-                // telegraf_links = transformLinks(telegraf_links)
+                var documentClone = doc.window.document.cloneNode(true);
+                if (isProbablyReaderable(documentClone)) {
+                  let parsed = new Readability(documentClone).parse()
+                  if (parsed == null) {
+                    console.log('parsed is null')
+                    return
+                  }
+                  let content = parsed.content//if null try to process directly with cheerio
+                  let title = parsed.title
 
-                // ctx.replyWithHTML(telegraf_links.join(' '), { reply_to_message_id: ctx.message.message_id })
+                  const $ = cheerio.load(content)
+                  $.html()
+                  //todo: if table, transform it to image, upload to telegraph and insert path to it
+
+                  // console.log($.html())
+                  let transformed = transform($('body')[0])
+
+                  let chil = transformed.children.filter(elem => (typeof elem != 'string') || (typeof elem == 'string' && elem.replace(/\s/g, '').length > 0))
+
+                  chil.unshift({ tag: 'br' })
+                  chil.unshift({ tag: 'a', attrs: { href: 'https://' + nm }, children: [nm] })
+                  chil.unshift(` from `)
+                  chil.unshift({ tag: 'a', attrs: { href: link }, children: ['Original link'] })
+
+                  chil.unshift({ tag: 'br' })
+                  chil.unshift({ tag: 'a', attrs: { href: 'https://t.me/BeautifierSimplifierBot' }, children: ['Made with Beautifier'] })
+
+                  let extra_chil = []
+                  let text_encoder = new util.TextEncoder()
+                  let ln = (text_encoder.encode(JSON.stringify(chil))).length
+
+                  const ph = new telegraph()
+                  const random_token = process.env.TELEGRAPH_TOKEN
+                  let telegraf_links = Array<string>()
+                  let article_parts = []
+                  // console.log('here')
+                  // console.log( (text_encoder.encode(JSON.stringify(chil))).length)
+                  let prev_len = 0
+                  while (chil.length > 0) {
+                    ln = (text_encoder.encode(JSON.stringify(chil))).length
+                    if (prev_len == chil.length) { break }
+                    prev_len = chil.length
+                    // if (ln > 63000 && chil.length == 1)
+                    //  break
+                    while (ln > 63000) {
+                      extra_chil.unshift(chil[chil.length - 1])
+                      chil = chil.slice(0, chil.length - 1)
+                      ln = (text_encoder.encode(JSON.stringify(chil))).length
+                    }
+                    article_parts.push(chil)
+                    // console.log(JSON.stringify(chil, null, 2))
+                    // let pg = await ph.createPage(random_token, title, chil, {
+                    //   return_content: true
+                    // })
+
+                    chil = extra_chil
+                    // console.log(chil.length)
+                    // console.log(chil)
+                    extra_chil = []
+                    // telegraf_links.push(pg.url)
+                  }
+                  // console.log('herea')
+                  let prev_url = ''
+                  let pg = undefined
+                  for (let art_i = article_parts.length - 1; art_i >= 0; --art_i) {
+                    let part = article_parts[art_i]
+                    if (prev_url.length > 0) {
+                      if (art_i != 0) {
+                        part.unshift({ tag: 'br' })
+                        part.unshift({ tag: 'a', attrs: { href: link }, children: ['Original link'] })
+                        part.unshift({ tag: 'br' })
+                        part.unshift({ tag: 'a', attrs: { href: 'https://t.me/BeautifierSimplifierBot' }, children: ['Made with Beautifier'] })
+                      }
+                      part.unshift({ tag: 'br' })
+                      part.unshift({ tag: 'h3', children: [{ tag: 'a', attrs: { href: `${prev_url}` }, children: [`Next part ${art_i + 1}`] }] })
+
+                      part.push({ tag: 'br' })
+                      part.push({ tag: 'h3', children: [{ tag: 'a', attrs: { href: `${prev_url}` }, children: [`Next part ${art_i + 1}`] }] })
+                    } else {
+                      if (article_parts.length > 1) {
+                        part.unshift({ tag: 'br' })
+                        part.unshift({ tag: 'a', attrs: { href: link }, children: ['Original link'] })
+                        part.unshift({ tag: 'br' })
+                        part.unshift({ tag: 'a', attrs: { href: 'https://t.me/BeautifierSimplifierBot' }, children: ['Made with Beautifier'] })
+                      }
+                    }
+                    pg = await ph.createPage(random_token, title, part, {
+                      return_content: true
+                    })
+                    prev_url = pg.url
+                    telegraf_links.push(pg.url)
+                  }
+                  telegraf_links.reverse()
+                  // console.log('hereb')
+                  await createArticle(link, telegraf_links)
+
+                  final_urls.push(telegraf_links[0])
+                  // console.log(final_urls)
+                  // telegraf_links = transformLinks(telegraf_links)
+
+                  // ctx.replyWithHTML(telegraf_links.join(' '), { reply_to_message_id: ctx.message.message_id })
+                }
               }
             }
-          }
-          if (final_urls.length < l_ind + 1) {
-            final_urls.push(link)
+            if (final_urls.length < l_ind + 1) {
+              final_urls.push(link)
+            }
           }
         }
+        console.log(final_urls)
         let msg = 'text' in ctx.message ? ctx.message.text : ctx.message.caption
         let new_msg = ''
         let last_ind = 0
@@ -242,10 +257,13 @@ export function setupBeautify(bot: Telegraf<Context>) {
           let start = url_place[ind][0]
           let offset = url_place[ind][1]
           let txt = msg.substr(start, offset)
-          // let lnk = `<a href='${elem}'>${txt}</a>`
           let lnk = ''
           if (elem.includes('telegra.ph')) {
-            lnk = `<a href='${elem}'>Instant View</a>`
+            if (elem.length > 4 && ['.mp4', '.jpg', '.png'].includes(elem.substr(elem.length - 4, 4))) {
+              lnk = ''
+            } else {
+              lnk = `<a href='${elem}'>Instant View</a>`
+            }
           } else {
             lnk = `<a href='${elem}'>${txt}</a>`
           }
