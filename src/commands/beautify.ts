@@ -385,13 +385,17 @@ function transform(ob) {
 
   let childs = ob.children
   if (childs != undefined) {
-    let i = 0
-    for (i = 0; i < childs.length; ++i) {
+    for (let i = 0; i < childs.length; ++i) {
       let chld = transform(childs[i])
       if (chld != "" && chld != null) {
         if (Array.isArray(chld)) {
           root.children = root.children.concat(chld)
         } else {
+          if (typeof chld != "string") {
+            if (chld.tag == 'li') {
+              root.children.pop()
+            }
+          }
           root.children.push(chld)
         }
       }
