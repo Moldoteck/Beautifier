@@ -48,6 +48,8 @@ function detectURL(message) {
   return [detected_urls, url_place]
 }
 
+import { countChats, countDocs } from '../models'
+
 export function setupBeautify(bot: Telegraf<Context>) {
   bot.command(['help', 'start'], (ctx) => {
     ctx.replyWithHTML(ctx.i18n.t('help'))
@@ -62,6 +64,19 @@ export function setupBeautify(bot: Telegraf<Context>) {
 
     await ctx.deleteMessage(ctx.message.message_id)
   })
+
+  bot.command('countChats', async (ctx) => {
+    if (ctx.message.from.id == 180001222) {
+      ctx.reply(' ' + (await countChats()))
+    }
+  })
+  
+  bot.command('countDocs', async (ctx) => {
+    if (ctx.message.from.id == 180001222) {
+      ctx.reply(' ' + (await countDocs()))
+    }
+  })
+
   bot.command('clearAll', async (ctx) => {
     if (ctx.message.from.id == 180001222) {
       await deleteAllArticles()
@@ -80,7 +95,7 @@ export function setupBeautify(bot: Telegraf<Context>) {
     if (ctx.dbchat.interactive || ctx.message.chat.type == 'private') {
       if ('text' in ctx.message || 'caption' in ctx.message) {
         let [detected_urls, url_place] = detectURL(ctx.message)
-console.log(ctx.message)
+        console.log(ctx.message)
         var final_urls = []
 
         for (let l_ind = 0; l_ind < detected_urls.length; ++l_ind) {
@@ -148,12 +163,12 @@ console.log(ctx.message)
                 let article_parts = []
                 // console.log('here')
                 // console.log( (text_encoder.encode(JSON.stringify(chil))).length)
-                let prev_len=0
+                let prev_len = 0
                 while (chil.length > 0) {
                   ln = (text_encoder.encode(JSON.stringify(chil))).length
-                  if (prev_len==chil.length){break}
-                  prev_len=chil.length
- // if (ln > 63000 && chil.length == 1)
+                  if (prev_len == chil.length) { break }
+                  prev_len = chil.length
+                  // if (ln > 63000 && chil.length == 1)
                   //  break
                   while (ln > 63000) {
                     extra_chil.unshift(chil[chil.length - 1])
@@ -186,7 +201,7 @@ console.log(ctx.message)
                     }
                     part.unshift({ tag: 'br' })
                     part.unshift({ tag: 'h3', children: [{ tag: 'a', attrs: { href: `${prev_url}` }, children: [`Next part ${art_i + 1}`] }] })
-                    
+
                     part.push({ tag: 'br' })
                     part.push({ tag: 'h3', children: [{ tag: 'a', attrs: { href: `${prev_url}` }, children: [`Next part ${art_i + 1}`] }] })
                   } else {

@@ -42,3 +42,7 @@ export async function deleteArticle(url: string) {
 export async function deleteAllArticles() {
   await ArticleModel.deleteMany({})
 }
+
+export async function countDocs() {
+  return await ArticleModel.countDocuments({})
+}
