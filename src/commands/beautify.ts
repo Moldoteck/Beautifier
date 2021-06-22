@@ -100,7 +100,9 @@ export function setupBeautify(bot: Telegraf<Context>) {
         let [detected_urls, url_place] = detectURL(ctx.message)
         console.log(ctx.message)
         var final_urls = []
-        ctx.telegram.sendChatAction(ctx.chat.id, "typing")
+        if (detected_urls.length > 0) {
+          ctx.telegram.sendChatAction(ctx.chat.id, "typing")
+        }
         for (let l_ind = 0; l_ind < detected_urls.length; ++l_ind) {
           let link = detected_urls[l_ind]
           if (!link.includes('http')) {
