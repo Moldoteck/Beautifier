@@ -122,7 +122,7 @@ export function setupBeautify(bot: Telegraf<Context>) {
             } else {
               if (!link.includes('telegra.ph') && !link.includes('tprg.ru') && !link.includes('tproger.ru')) {
                 const virtualConsole = new jsdom.VirtualConsole();
-                let document = await ndl('get', link, { follow_max: 5, decode_response: false })
+                let document = await ndl('get', link, { follow_max: 5, decode_response: true })
 
                 const $ = cheerio.load(document.body)
                 $('div[data-image-src]').replaceWith(function () {
