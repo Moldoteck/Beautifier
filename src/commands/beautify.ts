@@ -248,36 +248,38 @@ export function setupBeautify(bot: Telegraf<Context>) {
             }
           }
         }
-        console.log(final_urls)
-        let msg = 'text' in ctx.message ? ctx.message.text : ctx.message.caption
-        let new_msg = ''
-        let last_ind = 0
-        for (let ind = 0; ind < final_urls.length; ++ind) {
-          let elem = final_urls[ind]
-          let start = url_place[ind][0]
-          let offset = url_place[ind][1]
-          let txt = msg.substr(start, offset)
-          let lnk = ''
-          if (elem.includes('telegra.ph')) {
-            if (elem.length > 4 && ['.mp4', '.jpg', '.png'].includes(elem.substr(elem.length - 4, 4))) {
-              lnk = ''
+        if (final_urls.length > 0) {
+          console.log(final_urls)
+          let msg = 'text' in ctx.message ? ctx.message.text : ctx.message.caption
+          let new_msg = ''
+          let last_ind = 0
+          for (let ind = 0; ind < final_urls.length; ++ind) {
+            let elem = final_urls[ind]
+            let start = url_place[ind][0]
+            let offset = url_place[ind][1]
+            let txt = msg.substr(start, offset)
+            let lnk = ''
+            if (elem.includes('telegra.ph')) {
+              if (elem.length > 4 && ['.mp4', '.jpg', '.png'].includes(elem.substr(elem.length - 4, 4))) {
+                lnk = ''
+              } else {
+                lnk = `<a href='${elem}'>Instant View</a>`
+              }
             } else {
-              lnk = `<a href='${elem}'>Instant View</a>`
+              lnk = `<a href='${elem}'>${txt}</a>`
             }
-          } else {
-            lnk = `<a href='${elem}'>${txt}</a>`
+            if (ind == 0) {
+              new_msg = msg.substr(0, start) + lnk
+              last_ind = start + offset
+            } else {
+              new_msg = new_msg + msg.substring(last_ind, start) + lnk
+              last_ind = start + offset
+            }
           }
-          if (ind == 0) {
-            new_msg = msg.substr(0, start) + lnk
-            last_ind = start + offset
-          } else {
-            new_msg = new_msg + msg.substring(last_ind, start) + lnk
-            last_ind = start + offset
+          new_msg = new_msg + msg.substring(last_ind, msg.length)
+          if (new_msg.length > 0) {
+            ctx.replyWithHTML(new_msg, { reply_to_message_id: ctx.message.message_id })
           }
-        }
-        new_msg = new_msg + msg.substring(last_ind, msg.length)
-        if (new_msg.length > 0) {
-          ctx.replyWithHTML(new_msg, { reply_to_message_id: ctx.message.message_id })
         }
       }
     }
