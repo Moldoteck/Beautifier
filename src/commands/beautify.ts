@@ -325,26 +325,29 @@ function parseAttribs(root, ob) {
         }
       }
       if (!bad_width) {
-        let final_src = ''
+        let final_src = []
         if ('srcset' in ob.attribs && ob.attribs['srcset'].length > 0) {
           let srcset = ob.attribs['srcset'].split(', ')
           srcset = srcset[srcset.length - 1]
           srcset = srcset.split(' ')[0]
-          final_src = srcset.split('?')[0]
+          final_src.push(srcset.split('?')[0])
           at_detecetd = true
         } else if ('data-src' in ob.attribs && ob.attribs['data-src'].length > 0) {
-          final_src = ob.attribs['data-src'].split('?')[0]
+          final_src.push(ob.attribs['data-src'].split('?')[0])
           at_detecetd = true
         }
         if ('src' in ob.attribs) {
-          final_src = ob.attribs['src'].split('?')[0]
+          final_src.push(ob.attribs['src'].split('?')[0])
           at_detecetd = true
         }
         if (at_detecetd) {
-          if (!final_src.includes('.svg')) {
-            root.attrs['src'] = final_src
-          } else {
-            at_detecetd = false
+          at_detecetd = false
+          for (let i = 0; i < final_src.length; ++i) {
+            if ((!final_src[i].includes('.svg')) && (final_src[i].includes('http'))) {
+              root.attrs['src'] = final_src[i]
+              at_detecetd = true
+              break
+            }
           }
         }
       }
