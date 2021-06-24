@@ -158,6 +158,7 @@ export function setupBeautify(bot: Telegraf<Context>) {
                   // console.log($.html())
                   let transformed = transform($('body')[0])
 
+
                   let chil = transformed.children.filter(elem => (typeof elem != 'string') || (typeof elem == 'string' && elem.replace(/\s/g, '').length > 0))
 
                   chil.unshift({ tag: 'br' })
@@ -301,8 +302,8 @@ function transformLinks(links) {
   return transformed
 }
 
-const allowed_tags = ['body', 'iframe', 'a', 'aside', 'b', 'blockquote', 'br', 'code', 'em', 'figcaption', 'figure', 'h3', 'h4', 'hr', 'i', 'img', 'li', 'ol', 'p', 'pre', 's', 'strong', 'u', 'ul']
-const block_tags = ['div', 'section', 'article', 'main', 'header', 'span']
+const allowed_tags = ['body', 'iframe', 'a', 'aside', 'b', 'br', 'blockquote', 'code', 'em', 'figcaption', 'figure', 'h3', 'h4', 'hr', 'i', 'img', 'li', 'ol', 'p', 'pre', 's', 'strong', 'u', 'ul']
+const block_tags = ['div', 'section', 'article', 'main', 'header', 'span', 'center']
 
 function parseAttribs(root, ob) {
   let at_detecetd = false
@@ -324,18 +325,27 @@ function parseAttribs(root, ob) {
         }
       }
       if (!bad_width) {
+        let final_src = ''
         if ('srcset' in ob.attribs && ob.attribs['srcset'].length > 0) {
           let srcset = ob.attribs['srcset'].split(', ')
           srcset = srcset[srcset.length - 1]
           srcset = srcset.split(' ')[0]
-          root.attrs['src'] = srcset
+          final_src = srcset.split('?')[0]
           at_detecetd = true
         } else if ('data-src' in ob.attribs && ob.attribs['data-src'].length > 0) {
-          root.attrs['src'] = ob.attribs['data-src']
+          final_src = ob.attribs['data-src'].split('?')[0]
           at_detecetd = true
-        } else {
-          root.attrs['src'] = ob.attribs['src']
+        }
+        if ('src' in ob.attribs) {
+          final_src = ob.attribs['src'].split('?')[0]
           at_detecetd = true
+        }
+        if (at_detecetd) {
+          if (!final_src.includes('.svg')) {
+            root.attrs['src'] = final_src
+          } else {
+            at_detecetd = false
+          }
         }
       }
     }
@@ -395,9 +405,12 @@ function transform(ob) {
         if (Array.isArray(chld)) {
           root.children = root.children.concat(chld)
         } else {
-          if (typeof chld != "string") {
-            if (chld.tag == 'li') {
-              root.children.pop()
+          if (typeof chld == "string") {
+            if (['ul', 'ol'].includes(root.tag) && chld == '\n') {//avoid newline in lists
+              continue
+            }
+            if (chld.indexOf('\n') == 0) {//if /n is first element of string
+              chld = chld.substring(1)
             }
           }
           root.children.push(chld)
