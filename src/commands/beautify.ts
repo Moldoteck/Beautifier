@@ -1,22 +1,26 @@
 import { iv_links } from '@/helpers/iv_links';
 import { DocumentType } from '@typegoose/typegoose';
-import { Telegraf, Context } from 'telegraf'
-import { url } from 'telegraf/typings/button';
+import { Telegraf, Context, NarrowedContext } from 'telegraf'
+// import {MatchedContext} from 'telegraf'
+const telegraph = require('telegraph-node')
 import { URL } from 'url';
 const ndl = require("needle")
-const telegraph = require('telegraph-node')
 const cheerio = require('cheerio')
+
 const { Readability, isProbablyReaderable } = require('@mozilla/readability');
 var { JSDOM } = require('jsdom');
 const jsdom = require('jsdom');
+
 const util = require('util');
 import { findArticle, createArticle, deleteArticle, deleteAllArticles, Article } from '../models'
+import { countChats, countDocs } from '../models'
 
 function sleep(ms) {
   return new Promise((resolve) => {
     setTimeout(resolve, ms);
   });
 }
+
 function detectURL(message) {
   const entities = message.entities || message.caption_entities || []
   let detected_urls = []
@@ -50,8 +54,6 @@ function detectURL(message) {
   //todo: delete duplicates
   return [detected_urls, url_place]
 }
-
-import { countChats, countDocs } from '../models'
 
 export function setupBeautify(bot: Telegraf<Context>) {
   bot.command(['help', 'start'], (ctx) => {
@@ -118,7 +120,6 @@ export function setupBeautify(bot: Telegraf<Context>) {
             let art: DocumentType<Article> = await findArticle(link)
             if (art) {
               final_urls.push(art.telegraph_url[0])
-              let telegraf_links = transformLinks(art.telegraph_url)//`<a href='${art.telegraph_url}'>Beautiful link</a> `
             } else {
               if (!link.includes('telegra.ph') && !link.includes('tprg.ru') && !link.includes('tproger.ru')) {
                 const virtualConsole = new jsdom.VirtualConsole();
@@ -161,14 +162,6 @@ export function setupBeautify(bot: Telegraf<Context>) {
 
                   let chil = transformed.children.filter(elem => (typeof elem != 'string') || (typeof elem == 'string' && elem.replace(/\s/g, '').length > 0))
 
-                  chil.unshift({ tag: 'br' })
-                  chil.unshift({ tag: 'a', attrs: { href: 'https://' + nm }, children: [nm] })
-                  chil.unshift(` from `)
-                  chil.unshift({ tag: 'a', attrs: { href: link }, children: ['Original link'] })
-
-                  chil.unshift({ tag: 'br' })
-                  chil.unshift({ tag: 'a', attrs: { href: 'https://t.me/BeautifierSimplifierBot' }, children: ['Made with Beautifier'] })
-
                   let extra_chil = []
                   let text_encoder = new util.TextEncoder()
                   let ln = (text_encoder.encode(JSON.stringify(chil))).length
@@ -177,129 +170,101 @@ export function setupBeautify(bot: Telegraf<Context>) {
                   const random_token = process.env.TELEGRAPH_TOKEN
                   let telegraf_links = Array<string>()
                   let article_parts = []
-                  // console.log('here')
-                  // console.log( (text_encoder.encode(JSON.stringify(chil))).length)
+
                   let prev_len = 0
                   while (chil.length > 0) {
                     ln = (text_encoder.encode(JSON.stringify(chil))).length
                     if (prev_len == chil.length) { break }
                     prev_len = chil.length
-                    // if (ln > 63000 && chil.length == 1)
-                    //  break
                     while (ln > 63000) {
                       extra_chil.unshift(chil[chil.length - 1])
                       chil = chil.slice(0, chil.length - 1)
                       ln = (text_encoder.encode(JSON.stringify(chil))).length
                     }
                     article_parts.push(chil)
-                    // console.log(JSON.stringify(chil, null, 2))
-                    // let pg = await ph.createPage(random_token, title, chil, {
-                    //   return_content: true
-                    // })
 
                     chil = extra_chil
-                    // console.log(chil.length)
-                    // console.log(chil)
                     extra_chil = []
-                    // telegraf_links.push(pg.url)
                   }
-                  // console.log('herea')
+
                   let prev_url = ''
                   let pg = undefined
+                  //TODO: add link to previous part
                   for (let art_i = article_parts.length - 1; art_i >= 0; --art_i) {
                     let part = article_parts[art_i]
+                    part.unshift({ tag: 'br' })
+                    part.unshift({ tag: 'a', attrs: { href: 'https://' + nm }, children: [nm] })
+                    part.unshift(` from `)
+                    part.unshift({ tag: 'a', attrs: { href: link }, children: ['Original link'] })
+                    part.unshift({ tag: 'br' })
+                    part.unshift({ tag: 'a', attrs: { href: 'https://t.me/BeautifierSimplifierBot' }, children: ['Made with Beautifier'] })
+
                     if (prev_url.length > 0) {
-                      if (art_i != 0) {
-                        part.unshift({ tag: 'br' })
-                        part.unshift({ tag: 'a', attrs: { href: link }, children: ['Original link'] })
-                        part.unshift({ tag: 'br' })
-                        part.unshift({ tag: 'a', attrs: { href: 'https://t.me/BeautifierSimplifierBot' }, children: ['Made with Beautifier'] })
-                      }
                       part.unshift({ tag: 'br' })
                       part.unshift({ tag: 'h3', children: [{ tag: 'a', attrs: { href: `${prev_url}` }, children: [`Next part ${art_i + 1}`] }] })
 
                       part.push({ tag: 'br' })
                       part.push({ tag: 'h3', children: [{ tag: 'a', attrs: { href: `${prev_url}` }, children: [`Next part ${art_i + 1}`] }] })
-                    } else {
-                      if (article_parts.length > 1) {
-                        part.unshift({ tag: 'br' })
-                        part.unshift({ tag: 'a', attrs: { href: link }, children: ['Original link'] })
-                        part.unshift({ tag: 'br' })
-                        part.unshift({ tag: 'a', attrs: { href: 'https://t.me/BeautifierSimplifierBot' }, children: ['Made with Beautifier'] })
-                      }
                     }
                     pg = await ph.createPage(random_token, title, part, {
                       return_content: true
                     })
+                    // let tmp = await ph.getPage(pg.url.split('/').slice(-1)[0], {
+                    //   return_content: true
+                    // })
+                    // console.log(tmp)
                     prev_url = pg.url
                     telegraf_links.push(pg.url)
                   }
                   telegraf_links.reverse()
-                  // console.log('hereb')
                   await createArticle(link, telegraf_links)
 
                   final_urls.push(telegraf_links[0])
-                  // console.log(final_urls)
-                  // telegraf_links = transformLinks(telegraf_links)
-
                   // ctx.replyWithHTML(telegraf_links.join(' '), { reply_to_message_id: ctx.message.message_id })
                 }
               }
             }
             if (final_urls.length < l_ind + 1) {
+              //link can't be transformed
               final_urls.push(link)
             }
           }
         }
-        if (final_urls.length > 0) {
-          console.log(final_urls)
-          let msg = 'text' in ctx.message ? ctx.message.text : ctx.message.caption
-          let new_msg = ''
-          let last_ind = 0
-          for (let ind = 0; ind < final_urls.length; ++ind) {
-            let elem = final_urls[ind]
-            let start = url_place[ind][0]
-            let offset = url_place[ind][1]
-            let txt = msg.substr(start, offset)
-            let lnk = ''
-            if (elem.includes('telegra.ph')) {
-              if (elem.length > 4 && ['.mp4', '.jpg', '.png'].includes(elem.substr(elem.length - 4, 4))) {
-                lnk = ''
-              } else {
-                lnk = `<a href='${elem}'>Instant View</a>`
-              }
-            } else {
-              lnk = `<a href='${elem}'>${txt}</a>`
-            }
-            if (ind == 0) {
-              new_msg = msg.substr(0, start) + lnk
-              last_ind = start + offset
-            } else {
-              new_msg = new_msg + msg.substring(last_ind, start) + lnk
-              last_ind = start + offset
-            }
-          }
-          new_msg = new_msg + msg.substring(last_ind, msg.length)
-          if (new_msg.length > 0) {
-            ctx.replyWithHTML(new_msg, { reply_to_message_id: ctx.message.message_id })
-          }
-        }
+        sendResponse(final_urls, url_place, ctx)
       }
     }
   })
 }
 
-function transformLinks(links) {
-  let transformed = []
-  if (links.length == 1) {
-    transformed.push(`<a href='${links[0]}'>Beautiful link</a>`)
-  } else {
-    let i = 0
-    for (i = 0; i < links.length; ++i) {
-      transformed.push(`<a href='${links[i]}'>Beautiful link ${i + 1}</a>`)
+function sendResponse(final_urls: Array<string>, url_place: Array<Array<number>>, ctx) {
+  if (final_urls.length > 0) {
+    console.log(final_urls)
+    let orig_msg = 'text' in ctx.message ? ctx.message.text : ctx.message.caption
+    let new_msg = ''
+    let last_ind = 0
+    for (let ind = 0; ind < final_urls.length; ++ind) {
+      let elem = final_urls[ind]
+      let [start, offset] = url_place[ind]
+      let link_txt = orig_msg.substr(start, offset)
+      let lnk = ''
+      if (elem.includes('telegra.ph')) {
+        if (elem.length > 4 && ['.mp4', '.jpg', '.png'].includes(elem.substr(elem.length - 4, 4))) {
+          lnk = '' //filter url's with files
+        } else {
+          lnk = `<a href='${elem}'>Instant View</a>`
+        }
+      } else {
+        lnk = `<a href='${elem}'>${link_txt}</a>`//keep original links if can't transform
+      }
+
+      new_msg = new_msg + orig_msg.substring(last_ind, start) + lnk
+      last_ind = start + offset
+    }
+    new_msg = new_msg + orig_msg.substring(last_ind)//last chunk
+    if (new_msg.length > 0) {
+      ctx.replyWithHTML(new_msg, { reply_to_message_id: ctx.message.message_id })
     }
   }
-  return transformed
 }
 
 const allowed_tags = ['body', 'iframe', 'a', 'aside', 'b', 'br', 'blockquote', 'code', 'em', 'figcaption', 'figure', 'h3', 'h4', 'hr', 'i', 'img', 'li', 'ol', 'p', 'pre', 's', 'strong', 'u', 'ul']
@@ -307,6 +272,7 @@ const block_tags = ['div', 'section', 'article', 'main', 'header', 'span', 'cent
 
 function parseAttribs(root, ob) {
   let at_detecetd = false
+  let img_size_thresh = 100
   if (ob.attribs) {
     if ('href' in ob.attribs) {
       root.attrs['href'] = ob.attribs['href']
@@ -315,12 +281,12 @@ function parseAttribs(root, ob) {
     let bad_width = false
     if ('src' in ob.attribs) {
       if ('width' in ob.attribs) {
-        if ((!isNaN(ob.attribs['width'])) && ob.attribs['width'] <= 100) {
+        if ((!isNaN(ob.attribs['width'])) && ob.attribs['width'] <= img_size_thresh) {
           bad_width = true
         }
       }
       if ('height' in ob.attribs) {
-        if ((!isNaN(ob.attribs['height'])) && ob.attribs['height'] <= 100) {
+        if ((!isNaN(ob.attribs['height'])) && ob.attribs['height'] <= img_size_thresh) {
           bad_width = true
         }
       }
@@ -343,7 +309,7 @@ function parseAttribs(root, ob) {
         if (at_detecetd) {
           at_detecetd = false
           for (let i = 0; i < final_src.length; ++i) {
-            if ((!final_src[i].includes('.svg')) && (final_src[i].includes('http'))) {
+            if ((!final_src[i].includes('.svg')) && (final_src[i].includes('http'))) {//svg are not supported, link should have http
               root.attrs['src'] = final_src[i]
               at_detecetd = true
               break
@@ -359,17 +325,7 @@ function parseAttribs(root, ob) {
   return root
 }
 
-function transform(ob) {
-  let root = undefined
-
-  if (ob.type == 'text') {
-    if (ob.data.includes('author_name'))
-      return ""
-    let wout = ob.data.replace(/\s\s+/g, ' ')
-    return wout == ' ' ? "" : wout;
-  }
-
-  root = { tag: (ob).name, attrs: {}, children: [] }
+function transformTagElements(root) {
   if (['h1', 'h2'].includes(root.tag)) {
     root.tag = 'b'
   }
@@ -383,20 +339,42 @@ function transform(ob) {
     root.tag = 'b'
     root.children.push({ tag: 'br' })
   }
+  return root
+}
 
-  if (!allowed_tags.includes(root.tag) && !block_tags.includes(root.tag)) {
-    return ""
-  }
-
-  root = parseAttribs(root, ob)
-
+function embedVideos(root) {
   if (root.tag == 'iframe' && 'src' in root.attrs) {
+    //embed yt video
+    //TODO: embed telegram, twitter and vimeo elements too
     let real_yt = `https://www.youtube.com/watch?v=` + root.attrs['src'].split('?')[0].split('/embed/')[1]
     root = { tag: 'figure', children: [{ tag: 'iframe', attrs: { src: `/embed/youtube?url=${encodeURIComponent(real_yt)}` } }] }
     // return root
   }
+  return root
+}
 
-  if ('data-image-src' in ob.attribs) {
+function transform(ob) {
+  let root = undefined
+
+  if (ob.type == 'text') {
+    if (ob.data.includes('author_name'))
+      return ""
+    let wout = ob.data.replace(/\s\s+/g, ' ')
+    return wout == ' ' ? "" : wout;
+  }
+
+  root = { tag: (ob).name, attrs: {}, children: [] }
+  root = transformTagElements(root)
+
+  if (!allowed_tags.includes(root.tag) && !block_tags.includes(root.tag)) {
+    return undefined
+  }
+
+  root = parseAttribs(root, ob)
+  root = embedVideos(root)
+
+  if ('data-image-src' in ob.attribs) {//needed for vc.ru
+    //TODO: check if link is valid
     root.children.push({ tag: 'img', attrs: { 'src': ob.attribs['data-image-src'] } })
   }
 
@@ -404,7 +382,7 @@ function transform(ob) {
   if (childs != undefined) {
     for (let i = 0; i < childs.length; ++i) {
       let chld = transform(childs[i])
-      if (chld != "" && chld != null) {
+      if (chld) {
         if (Array.isArray(chld)) {
           root.children = root.children.concat(chld)
         } else {
@@ -432,6 +410,7 @@ function transform(ob) {
 
   return root
 }
+
 function toTable() {
   //               from telegraph import Telegraph
   // telegraph = Telegraph()
