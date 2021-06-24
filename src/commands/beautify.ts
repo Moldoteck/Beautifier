@@ -63,6 +63,9 @@ export function setupBeautify(bot: Telegraf<Context>) {
     if ('entities' in ctx.message.reply_to_message) {
       let [urls, _] = detectURL(ctx.message.reply_to_message)
       urls.forEach(async element => {
+        if (!element.includes('http')) {
+          element = 'http://' + element
+        }
         await deleteArticle(element)
       });
     }
