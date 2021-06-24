@@ -60,15 +60,13 @@ export function setupBeautify(bot: Telegraf<Context>) {
     ctx.replyWithHTML(ctx.i18n.t('help'))
   })
   bot.command('clear', async (ctx) => {
-    if ('entities' in ctx.message.reply_to_message) {
-      let [urls, _] = detectURL(ctx.message.reply_to_message)
-      urls.forEach(async element => {
-        if (!element.includes('http')) {
-          element = 'http://' + element
-        }
-        await deleteArticle(element)
-      });
-    }
+    let [urls, _] = detectURL(ctx.message.reply_to_message)
+    urls.forEach(async element => {
+      if (!element.includes('http')) {
+        element = 'http://' + element
+      }
+      await deleteArticle(element)
+    });
 
     await ctx.deleteMessage(ctx.message.message_id)
   })
