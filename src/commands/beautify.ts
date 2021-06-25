@@ -111,6 +111,9 @@ export function setupBeautify(bot: Telegraf<Context>) {
           if (!link.includes('http')) {
             link = 'http://' + link
           }
+          if (link.includes('ncbi.nlm.nih.gov')&&(!link.includes('?report=classic'))) {
+            link = link + '?report=classic'
+          }
           let url_obj = new URL(link)
           let nm = url_obj.hostname
           if (false && (nm in iv_links)) {
