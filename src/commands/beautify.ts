@@ -111,7 +111,7 @@ export function setupBeautify(bot: Telegraf<Context>) {
           if (!link.includes('http')) {
             link = 'http://' + link
           }
-          if (link.includes('ncbi.nlm.nih.gov')&&(!link.includes('?report=classic'))) {
+          if (link.includes('ncbi.nlm.nih.gov') && (!link.includes('?report=classic'))) {
             link = link + '?report=classic'
           }
           let url_obj = new URL(link)
@@ -127,7 +127,12 @@ export function setupBeautify(bot: Telegraf<Context>) {
             } else {
               if (!link.includes('telegra.ph') && !link.includes('tprg.ru') && !link.includes('tproger.ru')) {
                 const virtualConsole = new jsdom.VirtualConsole();
-                let document = await ndl('get', link, { follow_max: 5, decode_response: true })
+                let document = undefined
+                if (link.includes('vc.ru')) {
+                  await ndl('get', link, { follow_max: 5, decode_response: true })
+                } else {
+                  await ndl('get', link, { follow_max: 5, decode_response: false })
+                }
 
                 const $ = cheerio.load(document.body)
                 $('div[data-image-src]').replaceWith(function () {
@@ -216,7 +221,7 @@ export function setupBeautify(bot: Telegraf<Context>) {
                     // let tmp = await ph.getPage(pg.url.split('/').slice(-1)[0], {
                     //   return_content: true
                     // })
-                   // console.log(JSON.stringify(tmp.content, null, 2))
+                    // console.log(JSON.stringify(tmp.content, null, 2))
                     prev_url = pg.url
                     telegraf_links.push(pg.url)
                   }
