@@ -213,7 +213,7 @@ export function setupBeautify(bot: Telegraf<Context>) {
                     // let tmp = await ph.getPage(pg.url.split('/').slice(-1)[0], {
                     //   return_content: true
                     // })
-                    // console.log(tmp)
+                   // console.log(JSON.stringify(tmp.content, null, 2))
                     prev_url = pg.url
                     telegraf_links.push(pg.url)
                   }
@@ -299,7 +299,8 @@ function parseAttribs(root, ob) {
           srcset = srcset.split(' ')[0]
           final_src.push(srcset.split('?')[0])
           at_detecetd = true
-        } else if ('data-src' in ob.attribs && ob.attribs['data-src'].length > 0) {
+        }
+        if ('data-src' in ob.attribs && ob.attribs['data-src'].length > 0) {
           final_src.push(ob.attribs['data-src'].split('?')[0])
           at_detecetd = true
         }
@@ -313,7 +314,6 @@ function parseAttribs(root, ob) {
             if ((!final_src[i].includes('.svg')) && (final_src[i].includes('http'))) {//svg are not supported, link should have http
               root.attrs['src'] = final_src[i]
               at_detecetd = true
-              break
             }
           }
         }
