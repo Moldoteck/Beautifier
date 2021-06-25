@@ -129,9 +129,9 @@ export function setupBeautify(bot: Telegraf<Context>) {
                 const virtualConsole = new jsdom.VirtualConsole();
                 let document = undefined
                 if (link.includes('vc.ru')) {
-                  await ndl('get', link, { follow_max: 5, decode_response: true })
+                  document = await ndl('get', link, { follow_max: 5, decode_response: true })
                 } else {
-                  await ndl('get', link, { follow_max: 5, decode_response: false })
+                  document = await ndl('get', link, { follow_max: 5, decode_response: false })
                 }
 
                 const $ = cheerio.load(document.body)
