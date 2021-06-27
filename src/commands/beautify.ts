@@ -354,7 +354,7 @@ function transformTagElements(root) {
 }
 
 function embedVideos(root) {
-  if (root.tag == 'iframe' && 'src' in root.attrs) {
+  if (root.tag == 'iframe' && root.attrs && 'src' in root.attrs) {
     //embed yt video
     //TODO: embed telegram, twitter and vimeo elements too
     let real_yt = `https://www.youtube.com/watch?v=` + root.attrs['src'].split('?')[0].split('/embed/')[1]
