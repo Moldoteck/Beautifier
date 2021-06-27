@@ -7,7 +7,7 @@ export class Chat {
     @prop({ required: true, default: 'en' })
     language: string
     
-    @prop({ required: true, default: false })
+    @prop({ required: true, default: true })
     interactive: boolean
 }
 
