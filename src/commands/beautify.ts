@@ -158,6 +158,8 @@ export function setupBeautify(bot: Telegraf<Context>) {
                     console.log('parsed is null')
                     return
                   }
+
+                  ctx.telegram.sendChatAction(ctx.chat.id, "typing")
                   let content = parsed.content//if null try to process directly with cheerio
                   let title = parsed.title
 
