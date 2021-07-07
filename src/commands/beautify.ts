@@ -12,7 +12,7 @@ var { JSDOM } = require('jsdom');
 const jsdom = require('jsdom');
 
 const util = require('util');
-import { findArticle, createArticle, deleteArticle, deleteAllArticles, Article } from '../models'
+import { findArticle, createArticle, deleteArticle, deleteAllArticles, Article, findAllChats } from '../models'
 import { countChats, countDocs } from '../models'
 
 function sleep(ms) {
@@ -73,7 +73,23 @@ export function setupBeautify(bot: Telegraf<Context>) {
 
   bot.command('countChats', async (ctx) => {
     if (ctx.message.from.id == 180001222) {
-      ctx.reply(' ' + (await countChats()))
+      let chats = await findAllChats()
+      let users_tot = 0
+      let chat_nr = 0
+      let users_pr = 0
+      for (let element of chats) {
+        console.log(element)
+        try {
+          users_tot += await ctx.telegram.getChatMembersCount(element.id)
+          chat_nr += 1
+        } catch (err) {
+          console.log(err)
+          users_pr += 1
+        }
+      }
+      ctx.reply('Total users ' + users_tot)
+      ctx.reply('Private Users ' + users_pr)
+      ctx.reply('Users ' + chat_nr)
     }
   })
 

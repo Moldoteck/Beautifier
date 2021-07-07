@@ -33,6 +33,10 @@ export async function findOnlyChat(id: number) {
     return await ChatModel.findOne({ id })
 }
 
+export async function findAllChats() {
+    return await ChatModel.find({})
+}
+
 export async function countChats() {
     return await ChatModel.countDocuments({})
 }
