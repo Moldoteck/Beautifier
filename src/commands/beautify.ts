@@ -214,36 +214,66 @@ export function setupBeautify(bot: Telegraf<Context>) {
                     extra_chil = []
                   }
 
-                  let prev_url = ''
                   let pg = undefined
-                  //TODO: add link to previous part
-                  for (let art_i = article_parts.length - 1; art_i >= 0; --art_i) {
+                  let parts_url = []
+                  for (let art_i = 0; art_i < article_parts.length; ++art_i) {
                     let part = article_parts[art_i]
-                    part.unshift({ tag: 'br' })
-                    part.unshift({ tag: 'a', attrs: { href: 'https://' + nm }, children: [nm] })
-                    part.unshift(` from `)
-                    part.unshift({ tag: 'a', attrs: { href: link }, children: ['Original link'] })
-                    part.unshift({ tag: 'br' })
-                    part.unshift({ tag: 'a', attrs: { href: 'https://t.me/BeautifierSimplifierBot' }, children: ['Made with Beautifier'] })
 
-                    if (prev_url.length > 0) {
-                      part.unshift({ tag: 'br' })
-                      part.unshift({ tag: 'h3', children: [{ tag: 'a', attrs: { href: `${prev_url}` }, children: [`Next part ${art_i + 1}`] }] })
-
-                      part.push({ tag: 'br' })
-                      part.push({ tag: 'h3', children: [{ tag: 'a', attrs: { href: `${prev_url}` }, children: [`Next part ${art_i + 1}`] }] })
-                    }
                     pg = await ph.createPage(random_token, title, part, {
                       return_content: true
                     })
-                    // let tmp = await ph.getPage(pg.url.split('/').slice(-1)[0], {
-                    //   return_content: true
-                    // })
-                    // console.log(JSON.stringify(tmp.content, null, 2))
-                    prev_url = pg.url
-                    telegraf_links.push(pg.url)
+                    parts_url.push(pg.url)
                   }
-                  telegraf_links.reverse()
+
+                  for (let art_i = 0; art_i < parts_url.length; ++art_i) {
+                    let url = parts_url[art_i]
+                    let old_page = await ph.getPage(url.split('/').slice(-1)[0], {
+                      return_content: true
+                    })
+                    let content = old_page.content
+                    content.unshift({ tag: 'br' })
+                    content.unshift({ tag: 'a', attrs: { href: 'https://' + nm }, children: [nm] })
+                    content.unshift(` from `)
+                    content.unshift({ tag: 'a', attrs: { href: link }, children: ['Original link'] })
+                    content.unshift({ tag: 'br' })
+                    content.unshift({ tag: 'br' })
+                    content.unshift({ tag: 'a', attrs: { href: 'https://t.me/BeautifierSimplifierBot' }, children: ['Made with Beautifier'] })
+
+                    if (art_i < parts_url.length - 1) {
+                      content.unshift({ tag: 'br' })
+                      content.unshift({ tag: 'h3', children: [{ tag: 'a', attrs: { href: `${parts_url[art_i + 1]}` }, children: [`Next part ${art_i + 1}`] }] })
+                    }
+                    if (art_i > 0) {
+                      content.unshift({ tag: 'h3', children: [{ tag: 'a', attrs: { href: `${parts_url[art_i - 1]}` }, children: [`Prev part ${art_i - 1}`] }] })
+                    }
+
+                    if (art_i > 0) {
+                      content.push({ tag: 'h3', children: [{ tag: 'a', attrs: { href: `${parts_url[art_i - 1]}` }, children: [`Prev part ${art_i - 1}`] }] })
+                    }
+                    if (art_i < parts_url.length - 1) {
+                      content.push({ tag: 'h3', children: [{ tag: 'a', attrs: { href: `${parts_url[art_i + 1]}` }, children: [`Next part ${art_i + 1}`] }] })
+                      content.push({ tag: 'br' })
+                    }
+                    await ph.editPage(random_token, url.split('/').slice(-1)[0],title, content, {
+                      return_content: true
+                    })
+                  }
+
+                  // prev_url = pg.url
+                  telegraf_links=parts_url
+
+                  // let tmp = await ph.getPage(pg.url.split('/').slice(-1)[0], {
+                  //   return_content: true
+                  // })
+                  // console.log(JSON.stringify(tmp.content, null, 2))
+                  // if (prev_url.length > 0) {
+                  //   part.unshift({ tag: 'br' })
+                  //   part.unshift({ tag: 'h3', children: [{ tag: 'a', attrs: { href: `${prev_url}` }, children: [`Next part ${art_i + 1}`] }] })
+
+                  //   part.push({ tag: 'br' })
+                  //   part.push({ tag: 'h3', children: [{ tag: 'a', attrs: { href: `${prev_url}` }, children: [`Next part ${art_i + 1}`] }] })
+                  // }
+                  // telegraf_links.reverse()
                   await createArticle(link, telegraf_links)
 
                   final_urls.push(telegraf_links[0])
