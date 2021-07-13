@@ -65,6 +65,10 @@ export function setupBeautify(bot: Telegraf<Context>) {
       if (!element.includes('http')) {
         element = 'http://' + element
       }
+      
+      if (element.includes('ncbi.nlm.nih.gov') && (!element.includes('?report=classic'))) {
+        element = element + '?report=classic'
+      }
       await deleteArticle(element)
     });
 
