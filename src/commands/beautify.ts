@@ -212,6 +212,14 @@ export function setupBeautify(bot: Telegraf<Context>) {
                       chil = chil.slice(0, chil.length - 1)
                       ln = (text_encoder.encode(JSON.stringify(chil))).length
                     }
+                    chil.unshift({ tag: 'br' })
+                    chil.unshift({ tag: 'a', attrs: { href: 'https://' + nm }, children: [nm] })
+                    chil.unshift(` from `)
+                    chil.unshift({ tag: 'a', attrs: { href: link }, children: ['Original link'] })
+                    chil.unshift({ tag: 'br' })
+                    chil.unshift({ tag: 'br' })
+                    chil.unshift({ tag: 'a', attrs: { href: 'https://t.me/BeautifierSimplifierBot' }, children: ['Made with Beautifier'] })
+  
                     article_parts.push(chil)
 
                     chil = extra_chil
@@ -235,13 +243,6 @@ export function setupBeautify(bot: Telegraf<Context>) {
                       return_content: true
                     })
                     let content = old_page.content
-                    content.unshift({ tag: 'br' })
-                    content.unshift({ tag: 'a', attrs: { href: 'https://' + nm }, children: [nm] })
-                    content.unshift(` from `)
-                    content.unshift({ tag: 'a', attrs: { href: link }, children: ['Original link'] })
-                    content.unshift({ tag: 'br' })
-                    content.unshift({ tag: 'br' })
-                    content.unshift({ tag: 'a', attrs: { href: 'https://t.me/BeautifierSimplifierBot' }, children: ['Made with Beautifier'] })
 
                     if (art_i < parts_url.length - 1) {
                       content.unshift({ tag: 'br' })
