@@ -207,7 +207,7 @@ export function setupBeautify(bot: Telegraf<Context>) {
                     ln = (text_encoder.encode(JSON.stringify(chil))).length
                     if (prev_len == chil.length) { break }
                     prev_len = chil.length
-                    while (ln > 63000) {
+                    while (ln > 60000) {
                       extra_chil.unshift(chil[chil.length - 1])
                       chil = chil.slice(0, chil.length - 1)
                       ln = (text_encoder.encode(JSON.stringify(chil))).length
