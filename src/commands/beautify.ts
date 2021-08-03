@@ -330,7 +330,7 @@ function sendResponse(final_urls: Array<string>, url_place: Array<Array<number>>
 }
 
 const allowed_tags = ['body', 'iframe', 'a', 'aside', 'b', 'br', 'blockquote', 'code', 'em', 'figcaption', 'figure', 'h3', 'h4', 'hr', 'i', 'img', 'li', 'ol', 'p', 'pre', 's', 'strong', 'u', 'ul']
-const block_tags = ['div', 'section', 'article', 'main', 'header', 'span', 'center']
+const block_tags = ['div', 'section', 'article', 'main', 'header', 'span', 'center','picture']
 
 function parseAttribs(root, ob) {
   let at_detecetd = false
