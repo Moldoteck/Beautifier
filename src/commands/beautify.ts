@@ -25,11 +25,13 @@ function detectURL(message) {
   const entities = message.entities || message.caption_entities || []
   let detected_urls = []
   let url_place = []
+  let url_type = []
   for (const entity of entities) {
     if (entity.type === 'text_link' || entity.type === 'url') {
       if ('url' in entity) {
         detected_urls.push(entity.url)
         url_place.push([entity.offset, entity.length])
+        url_type.push(0)
       }
       else {
         if ('text' in message) {
@@ -39,6 +41,7 @@ function detectURL(message) {
           )
           url_place.push([entity.offset, entity.length])
           detected_urls.push(det_url)
+          url_type.push(1)
         }
         else if ('caption' in message) {
           let det_url = (message.caption).substr(
@@ -47,12 +50,13 @@ function detectURL(message) {
           )
           url_place.push([entity.offset, entity.length])
           detected_urls.push(det_url)
+          url_type.push(1)
         }
       }
     }
   }
   //todo: delete duplicates
-  return [detected_urls, url_place]
+  return [detected_urls, url_place, url_type]
 }
 
 export function setupBeautify(bot: Telegraf<Context>) {
@@ -65,7 +69,7 @@ export function setupBeautify(bot: Telegraf<Context>) {
       if (!element.includes('http')) {
         element = 'http://' + element
       }
-      
+
       if (element.includes('ncbi.nlm.nih.gov') && (!element.includes('?report=classic'))) {
         element = element + '?report=classic'
       }
@@ -120,7 +124,7 @@ export function setupBeautify(bot: Telegraf<Context>) {
   bot.on(['text', 'message'], async ctx => {
     if (ctx.dbchat.interactive || ctx.message.chat.type == 'private') {
       if ('text' in ctx.message || 'caption' in ctx.message) {
-        let [detected_urls, url_place] = detectURL(ctx.message)
+        let [detected_urls, url_place, url_type] = detectURL(ctx.message)
         console.log(ctx.message)
         var final_urls = []
         if (detected_urls.length > 0) {
@@ -219,7 +223,7 @@ export function setupBeautify(bot: Telegraf<Context>) {
                     chil.unshift({ tag: 'br' })
                     chil.unshift({ tag: 'br' })
                     chil.unshift({ tag: 'a', attrs: { href: 'https://t.me/BeautifierSimplifierBot' }, children: ['Made with Beautifier'] })
-  
+
                     article_parts.push(chil)
 
                     chil = extra_chil
@@ -259,13 +263,13 @@ export function setupBeautify(bot: Telegraf<Context>) {
                       content.push({ tag: 'h3', children: [{ tag: 'a', attrs: { href: `${parts_url[art_i + 1]}` }, children: [`Next part ${art_i + 1}`] }] })
                       content.push({ tag: 'br' })
                     }
-                    await ph.editPage(random_token, url.split('/').slice(-1)[0],title, content, {
+                    await ph.editPage(random_token, url.split('/').slice(-1)[0], title, content, {
                       return_content: true
                     })
                   }
 
                   // prev_url = pg.url
-                  telegraf_links=parts_url
+                  telegraf_links = parts_url
 
                   // let tmp = await ph.getPage(pg.url.split('/').slice(-1)[0], {
                   //   return_content: true
@@ -292,13 +296,13 @@ export function setupBeautify(bot: Telegraf<Context>) {
             }
           }
         }
-        sendResponse(final_urls, url_place, ctx)
+        sendResponse(final_urls, url_place, url_type, ctx)
       }
     }
   })
 }
 
-function sendResponse(final_urls: Array<string>, url_place: Array<Array<number>>, ctx) {
+function sendResponse(final_urls: Array<string>, url_place: Array<Array<number>>, url_type: Array<number>, ctx) {
   if (final_urls.length > 0) {
     console.log(final_urls)
     let orig_msg = 'text' in ctx.message ? ctx.message.text : ctx.message.caption
@@ -313,7 +317,11 @@ function sendResponse(final_urls: Array<string>, url_place: Array<Array<number>>
         if (elem.length > 4 && ['.mp4', '.jpg', '.png'].includes(elem.substr(elem.length - 4, 4))) {
           lnk = '' //filter url's with files
         } else {
-          lnk = `<a href='${elem}'>Instant View</a>`
+          if (url_type[ind] == 1) {
+            lnk = `<a href='${elem}'>Instant View</a>`
+          } else {
+            lnk = `<a href='${elem}'>${link_txt}</a>`
+          }
         }
       } else {
         lnk = `<a href='${elem}'>${link_txt}</a>`//keep original links if can't transform
@@ -330,7 +338,7 @@ function sendResponse(final_urls: Array<string>, url_place: Array<Array<number>>
 }
 
 const allowed_tags = ['body', 'iframe', 'a', 'aside', 'b', 'br', 'blockquote', 'code', 'em', 'figcaption', 'figure', 'h3', 'h4', 'hr', 'i', 'img', 'li', 'ol', 'p', 'pre', 's', 'strong', 'u', 'ul']
-const block_tags = ['div', 'section', 'article', 'main', 'header', 'span', 'center','picture']
+const block_tags = ['div', 'section', 'article', 'main', 'header', 'span', 'center', 'picture']
 
 function parseAttribs(root, ob) {
   let at_detecetd = false
