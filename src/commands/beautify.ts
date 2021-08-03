@@ -320,7 +320,7 @@ function sendResponse(final_urls: Array<string>, url_place: Array<Array<number>>
           if (url_type[ind] == 1) {
             lnk = `<a href='${elem}'>Instant View</a>`
           } else {
-            lnk = `<a href='${elem}'>${link_txt}</a>`
+            lnk = `<a href='${elem}'>${link_txt}[*]</a>`
           }
         }
       } else {
