@@ -1,6 +1,5 @@
 import { iv_links } from '@/helpers/iv_links';
 import { DocumentType } from '@typegoose/typegoose';
-import needle = require('needle');
 import { Telegraf, Context, NarrowedContext } from 'telegraf'
 // import {MatchedContext} from 'telegraf'
 const telegraph = require('telegraph-node')
@@ -23,76 +22,62 @@ function sleep(ms) {
   });
 }
 
-export function setupBeautify(bot: Telegraf<Context>) {
-  bot.command(['help', 'start'], (ctx) => {
-    ctx.replyWithHTML(ctx.i18n.t('help'))
-  })
-  bot.command('clear', async (ctx) => {
-    let [urls, _] = detectURL(ctx.message.reply_to_message)
-    urls.forEach(async element => {
-      element = processURL(element)
-      await deleteArticle(element)
-    });
 
-    await ctx.deleteMessage(ctx.message.message_id)
-  })
+export async function extractDocument(link){
+  const virtualConsole = new jsdom.VirtualConsole();
+  let document = undefined
+  if (link.includes('vc.ru')) {
+    document = await ndl('get', link, { follow_max: 5, decode_response: false })
+  } else {
+    document = await ndl('get', link, { follow_max: 5, decode_response: true })
+  }
 
-  bot.command('countChats', async (ctx) => {
-    if (ctx.message.from.id == 180001222) {
-      let chats = await findAllChats()
-      let users_tot = 0
-      let chat_nr = 0
-      let users_pr = 0
-      for (let element of chats) {
-        console.log(element)
-        try {
-          users_tot += await ctx.telegram.getChatMembersCount(element.id)
-          chat_nr += 1
-        } catch (err) {
-          console.log(err)
-          users_pr += 1
-        }
-      }
-      ctx.reply('Total users ' + users_tot)
-      ctx.reply('Private Users ' + users_pr)
-      ctx.reply('Chats ' + chat_nr)
+  const $ = cheerio.load(document.body)
+  $('div[data-image-src]').replaceWith(function () {
+    const src = $(this).attr('data-image-src')
+    return `<img src=${src}>`
+  })
+  var doc = undefined
+  try {
+    doc = new JSDOM($.html(), {
+      virtualConsole,
+      url: link
+    })
+  } catch {
+    doc = new JSDOM($.html(), {
+      virtualConsole
+    })
+  }
+  return doc
+}
+
+export function getMainContentFF(doc) {
+  
+  var documentClone = doc.window.document.cloneNode(true);
+  if (isProbablyReaderable(documentClone)) {
+    let parsed = new Readability(documentClone).parse()
+    if (parsed == null) {
+      console.log('parsed is null')
+      return undefined
     }
-  })
+    return parsed
+  }
+  return undefined
+}
 
-  bot.command('countDocs', async (ctx) => {
-    if (ctx.message.from.id == 180001222) {
-      ctx.reply(' ' + (await countDocs()))
-    }
-  })
 
-  bot.command('clearAll', async (ctx) => {
-    //TODO: owner id should be in env
-    //TODO: move chat counting to another package
-    if (ctx.message.from.id == 180001222) {
-      await deleteAllArticles()
-    }
-    await ctx.deleteMessage(ctx.message.message_id)
-  })
+export function getMainContentOutline(doc) {
+  //use bitly and after - outline.com with headless browser
+}
 
-  bot.command('interactive', async (ctx) => {
-    let chat = ctx.dbchat
-    chat.interactive = !chat.interactive
-    chat = await (chat as any).save()
-    ctx.reply('ok')
-  })
+  export function getDocumentBody(content){
+    const $ = cheerio.load(content)
+    $.html()
+    return $('body')[0]
+  }
 
-  bot.on(['text', 'message'], async ctx => {
-    if (ctx.dbchat.interactive || ctx.message.chat.type == 'private') {
-      if ('text' in ctx.message || 'caption' in ctx.message) {
-        let [detected_urls, url_place, url_type] = detectURL(ctx.message)
-        console.log(ctx.message)
-        var final_urls = []
-        if (detected_urls.length > 0) {
-          ctx.telegram.sendChatAction(ctx.chat.id, "typing")
-        }
-        for (let l_ind = 0; l_ind < detected_urls.length; ++l_ind) {
           let link = detected_urls[l_ind]
-
+          
           link = processURL(link)
           let url_obj = new URL(link)
           let nm = url_obj.hostname
@@ -148,7 +133,7 @@ export function setupBeautify(bot: Telegraf<Context>) {
                   //todo: if table, transform it to image, upload to telegraph and insert path to it
 
                   // console.log($.html())
-                  let transformed = await transform($('body')[0])
+                  let transformed = transform($('body')[0])
 
 
                   let chil = transformed.children.filter(elem => (typeof elem != 'string') || (typeof elem == 'string' && elem.replace(/\s/g, '').length > 0))
@@ -186,7 +171,6 @@ export function setupBeautify(bot: Telegraf<Context>) {
                     extra_chil = []
                   }
 
-                  // console.log(JSON.stringify(chil,null,2))
                   let pg = undefined
                   let parts_url = []
                   for (let art_i = 0; art_i < article_parts.length; ++art_i) {
@@ -252,12 +236,6 @@ export function setupBeautify(bot: Telegraf<Context>) {
               final_urls.push(link)
             }
           }
-        }
-        sendResponse(final_urls, url_place, url_type, ctx)
-      }
-    }
-  })
-}
 
 function sendResponse(final_urls: Array<string>, url_place: Array<Array<number>>, url_type: Array<number>, ctx) {
   if (final_urls.length > 0) {
@@ -297,7 +275,7 @@ function sendResponse(final_urls: Array<string>, url_place: Array<Array<number>>
 const allowed_tags = ['body', 'iframe', 'a', 'aside', 'b', 'br', 'blockquote', 'code', 'em', 'figcaption', 'figure', 'h3', 'h4', 'hr', 'i', 'img', 'li', 'ol', 'p', 'pre', 's', 'strong', 'u', 'ul']
 const block_tags = ['div', 'section', 'article', 'main', 'header', 'span', 'center', 'picture']
 
-async function parseAttribs(root, ob) {
+function parseAttribs(root, ob) {
   let at_detecetd = false
   let img_size_thresh = 100
   if (ob.attribs) {
@@ -323,36 +301,16 @@ async function parseAttribs(root, ob) {
           let srcset = ob.attribs['srcset'].split(', ')
           srcset = srcset[srcset.length - 1]
           srcset = srcset.split(' ')[0]
-          let src = srcset.split('?')[0]
-          if (src.endsWith('.jpg') || src.endsWith('.jpeg') || src.endsWith('.png') || src.endsWith('.gif') || src.endsWith('.svg')) {
-            final_src.push(src)
-            at_detecetd = true
-          }
+          final_src.push(srcset.split('?')[0])
+          at_detecetd = true
         }
         if ('data-src' in ob.attribs && ob.attribs['data-src'].length > 0) {
-          let src = ob.attribs['data-src'].split('?')[0]
-          if (src.endsWith('.jpg') || src.endsWith('.jpeg') || src.endsWith('.png') || src.endsWith('.gif') || src.endsWith('.svg')) {
-            final_src.push(src)
-            at_detecetd = true
-          }
+          final_src.push(ob.attribs['data-src'].split('?')[0])
+          at_detecetd = true
         }
         if ('src' in ob.attribs) {
-          let src = ob.attribs['src'].split('?')[0]
-          if (src.endsWith('.jpg') || src.endsWith('.jpeg') || src.endsWith('.png') || src.endsWith('.gif') || src.endsWith('.svg')) {
-
-            let rs = await needle('head', src)
-            if (rs.statusCode == 200) {
-              final_src.push(src)
-              at_detecetd = true
-            } else {
-              let rs = await needle('head', ob.attribs['src'])
-              if (rs.statusCode == 200) {
-                final_src.push(ob.attribs['src'])
-                at_detecetd = true
-              }
-            }
-            // let rss = needle('head', src + 'jjhhj.png').then(res => { console.log(res.statusCode) })
-          }
+          final_src.push(ob.attribs['src'].split('?')[0])
+          at_detecetd = true
         }
         if (at_detecetd) {
           at_detecetd = false
@@ -400,7 +358,7 @@ function embedVideos(root) {
   return root
 }
 
-async function transform(ob) {
+function transform(ob) {
   let root = undefined
 
   if (ob.type == 'text') {
@@ -417,21 +375,18 @@ async function transform(ob) {
     return undefined
   }
 
-  root = await parseAttribs(root, ob)
+  root = parseAttribs(root, ob)
   root = embedVideos(root)
 
   if ('data-image-src' in ob.attribs) {//needed for vc.ru
-    let src: string = ob.attribs['data-image-src']
-    if (src.endsWith('.jpg') || src.endsWith('.jpeg') || src.endsWith('.png') || src.endsWith('.gif')) {
-      //TODO: check if link is valid
-      root.children.push({ tag: 'img', attrs: { 'src': ob.attribs['data-image-src'] } })
-    }
+    //TODO: check if link is valid
+    root.children.push({ tag: 'img', attrs: { 'src': ob.attribs['data-image-src'] } })
   }
 
   let childs = ob.children
   if (childs != undefined) {
     for (let i = 0; i < childs.length; ++i) {
-      let chld = await transform(childs[i])
+      let chld = transform(childs[i])
       if (chld) {
         if (Array.isArray(chld)) {
           root.children = root.children.concat(chld)
