@@ -340,16 +340,20 @@ async function parseAttribs(root, ob) {
           let src = ob.attribs['src'].split('?')[0]
           if (src.endsWith('.jpg') || src.endsWith('.jpeg') || src.endsWith('.png') || src.endsWith('.gif') || src.endsWith('.svg')) {
 
-            let rs = await needle('head', src)
-            if (rs.statusCode == 200) {
-              final_src.push(src)
-              at_detecetd = true
-            } else {
-              let rs = await needle('head', ob.attribs['src'])
+            try {
+              let rs = await needle('head', src)
               if (rs.statusCode == 200) {
-                final_src.push(ob.attribs['src'])
+                final_src.push(src)
                 at_detecetd = true
+              } else {
+                let rs = await needle('head', ob.attribs['src'])
+                if (rs.statusCode == 200) {
+                  final_src.push(ob.attribs['src'])
+                  at_detecetd = true
+                }
               }
+            } catch (e) {
+              console.log('Error is '+e)
             }
             // let rss = needle('head', src + 'jjhhj.png').then(res => { console.log(res.statusCode) })
           }
