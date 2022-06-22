@@ -33,7 +33,7 @@
     "puppeteer": "5.4.1",
     "telegraph-node": "^1.0.4",
     "cheerio": "^1.0.0-rc.6",
-    "@mozilla/readability":"^0.4.1",
+    "@mozilla/readability":"^0.4.2",
     "jsdom":"^16.5.3"
   },
   "_moduleAliases": {

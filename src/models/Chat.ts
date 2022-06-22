@@ -28,6 +28,10 @@ export async function findChat(id: number) {
     }
     return chat
 }
+//function to delete chat by id
+export async function deleteChat(id: number) {
+    await ChatModel.deleteOne({ id })
+}
 
 export async function findOnlyChat(id: number) {
     return await ChatModel.findOne({ id })

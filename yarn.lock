@@ -23,10 +23,10 @@
     chalk "^2.0.0"
     js-tokens "^4.0.0"
 
-"@mozilla/readability@^0.4.1":
-  version "0.4.1"
-  resolved "https://registry.yarnpkg.com/@mozilla/readability/-/readability-0.4.1.tgz#e112a625b25ac47659d33b37e080748a6d85218b"
-  integrity sha512-yar/f0w0fRUVM895s6yd5Z2oIxjG/6c3ROB/uQboSOBaDlri/nqI4aKtdqrldWciTLcdpjB2Z6MiVF2Bl9b8LA==
+"@mozilla/readability@^0.4.2":
+  version "0.4.2"
+  resolved "https://registry.yarnpkg.com/@mozilla/readability/-/readability-0.4.2.tgz#a425f3dccdbe777d45a4e791bd703ebe633ebb87"
+  integrity sha512-48MJXzi4Dhy2fJ3lGjmwdEJKoMmn3oiYew9n/1OW6cZy78hAzRIyDJDBCGrg4PBFDyY4xos+H4LCFn5QVRDcfw==
 
 "@sindresorhus/is@^0.14.0":
   version "0.14.0"
