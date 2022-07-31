@@ -200,7 +200,7 @@ async function messageProcessing(detected_urls: any[], ctx: Context) {
 
             let transformed = (await Atransform($("body")[0]))[0];
 
-            console.log(JSON.stringify(transformed, null, 2));
+            // console.log(JSON.stringify(transformed, null, 2));
             let chil = transformed.children.filter(
               (elem) =>
                 typeof elem != "string" ||
@@ -212,7 +212,7 @@ async function messageProcessing(detected_urls: any[], ctx: Context) {
             let telegraf_links = Array<string>();
 
             let article_parts = splitArray(chil, link);
-            console.log(JSON.stringify(article_parts, null, 2));
+            // console.log(JSON.stringify(article_parts, null, 2));
             let parts_url = await createPages(
               article_parts,
               random_token,
