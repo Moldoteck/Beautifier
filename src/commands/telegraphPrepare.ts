@@ -28,7 +28,7 @@ export function splitArray(articleArray: Array<Object>, link: string) {
   if (subArticleArray.length != 0) {
     articleParts.push(subArticleArray);
   }
-  console.log(articleParts.length);
+  // console.log(articleParts.length);
   //Add links to the original page and to the bot
   articleParts = articleParts.map((part) => addBotLink(addLinks(part, link)));
 
